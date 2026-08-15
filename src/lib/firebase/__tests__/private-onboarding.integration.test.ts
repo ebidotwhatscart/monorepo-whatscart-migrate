@@ -82,6 +82,32 @@ async function createIdentity(email: string): Promise<EmulatorIdentity> {
   return { ...identity, password };
 }
 
+async function verifyAndRefreshIdentity(
+  identity: EmulatorIdentity,
+): Promise<EmulatorIdentity> {
+  const { getAdminAuth } = await import("../admin");
+  await getAdminAuth()!.updateUser(identity.localId, { emailVerified: true });
+  const response = await fetch(
+    `http://${process.env.FIREBASE_AUTH_EMULATOR_HOST!}/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=demo-key`,
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        email: identity.email,
+        password: identity.password,
+        returnSecureToken: true,
+      }),
+    },
+  );
+  if (!response.ok) throw new Error(await response.text());
+  const refreshed = (await response.json()) as {
+    email: string;
+    idToken: string;
+    localId: string;
+  };
+  return { ...identity, ...refreshed };
+}
+
 function authorizedRequest(url: string, idToken: string, init: RequestInit = {}) {
   const headers = new Headers(init.headers);
   headers.set("authorization", `Bearer ${idToken}`);
@@ -169,6 +195,71 @@ describeWithEmulator("Firebase private onboarding", () => {
     expect(setCookie).toContain("__session=");
     expect(setCookie.toLowerCase()).toContain("httponly");
     ownerCookie = setCookie.split(";")[0];
+  });
+
+  it("claims a migrated Convex owner by verified email on first sign-in", async () => {
+    const identity = await verifyAndRefreshIdentity(
+      await createIdentity("migrated-owner@example.test"),
+    );
+    const legacyUserId = "legacy-convex-user-id";
+    const legacyBusinessId = "legacy-convex-business-id";
+    await Promise.all([
+      firestore.collection("users").doc(legacyUserId).set({
+        _creationTime: 1_700_000_000_000,
+        createdAt: 1_700_000_000_000,
+        email: identity.email,
+        legacyClerkId: "clerk-user-id",
+        legacyConvexId: legacyUserId,
+        migrationPendingLink: true,
+        name: "Migrated Owner",
+        role: "user",
+      }),
+      firestore.collection("businesses").doc(legacyBusinessId).set({
+        _creationTime: 1_700_000_000_100,
+        businessType: "garments",
+        isEnabled: true,
+        name: "Migrated Store",
+        ownerId: legacyUserId,
+        slug: "migrated-store",
+        themeColor: "#112233",
+        whatsappPhone: "919876543210",
+      }),
+    ]);
+
+    const { POST: bootstrap } = await import(
+      "../../../app/api/auth/bootstrap/route"
+    );
+    const response = await bootstrap(
+      authorizedRequest(
+        "http://app.whatscart.in/api/auth/bootstrap",
+        identity.idToken,
+        { method: "POST" },
+      ),
+    );
+    expect(response.status).toBe(200);
+    await expect(
+      firestore.collection("users").doc(legacyUserId).get(),
+    ).resolves.toMatchObject({ exists: false });
+    await expect(
+      firestore.collection("users").doc(identity.localId).get(),
+    ).resolves.toMatchObject({
+      exists: true,
+      data: expect.any(Function),
+    });
+    const linkedUser = await firestore
+      .collection("users")
+      .doc(identity.localId)
+      .get();
+    expect(linkedUser.data()).toMatchObject({
+      legacyConvexId: legacyUserId,
+      migrationPendingLink: false,
+      name: "Migrated Owner",
+    });
+    const linkedBusiness = await firestore
+      .collection("businesses")
+      .doc(legacyBusinessId)
+      .get();
+    expect(linkedBusiness.data()).toMatchObject({ ownerId: identity.localId });
   });
 
   it("prevents a signed-in user from assigning their own role", async () => {

@@ -15,6 +15,7 @@ import {
 } from "@/lib/firebase/storefront";
 import { firebaseQueryKey } from "@/lib/firebase/query-key";
 import { tenantOrigin } from "@/lib/tenancy/host";
+import { serializeJsonLd } from "@/lib/storefront-seo";
 
 type TenantPageProps = {
   params: Promise<{ tenant: string; path?: string[] }>;
@@ -204,7 +205,7 @@ export default async function TenantPage({ params }: TenantPageProps) {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(structuredData).replace(/</g, "\\u003c"),
+          __html: serializeJsonLd(structuredData),
         }}
       />
       <TenantClientEntry
