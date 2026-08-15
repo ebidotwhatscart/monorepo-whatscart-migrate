@@ -1,0 +1,131 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isSuperAdmin() {
+      return signedIn() && request.auth.token.super_admin == true;
+    }
+
+    function ownsBusiness(businessId) {
+      return signedIn()
+        && get(/databases/$(database)/documents/businesses/$(businessId)).data.ownerId
+          == request.auth.uid;
+    }
+
+    function businessIsPublic(businessId) {
+      let business = get(
+        /databases/$(database)/documents/businesses/$(businessId)
+      ).data;
+      return !('isEnabled' in business) || business.isEnabled == true;
+    }
+
+    match /users/{userId} {
+      allow read: if signedIn() && request.auth.uid == userId;
+      // User creation, role assignment, and profile synchronization run through
+      // Firebase Admin after token verification. Clients cannot self-promote.
+      allow create, update, delete: if false;
+      allow read, write: if isSuperAdmin();
+    }
+
+    match /businesses/{businessId} {
+      allow read: if (!('isEnabled' in resource.data) || resource.data.isEnabled == true)
+        || ownsBusiness(businessId)
+        || isSuperAdmin();
+      allow create: if signedIn()
+        && request.resource.data.ownerId == request.auth.uid;
+      allow update, delete: if ownsBusiness(businessId) || isSuperAdmin();
+    }
+
+    match /products/{productId} {
+      allow read: if businessIsPublic(resource.data.businessId)
+        || ownsBusiness(resource.data.businessId)
+        || isSuperAdmin();
+      allow create: if ownsBusiness(request.resource.data.businessId)
+        || isSuperAdmin();
+      allow update, delete: if ownsBusiness(resource.data.businessId)
+        || isSuperAdmin();
+    }
+
+    match /categories/{categoryId} {
+      allow read: if businessIsPublic(resource.data.businessId)
+        || ownsBusiness(resource.data.businessId)
+        || isSuperAdmin();
+      allow create: if ownsBusiness(request.resource.data.businessId)
+        || isSuperAdmin();
+      allow update, delete: if ownsBusiness(resource.data.businessId)
+        || isSuperAdmin();
+    }
+
+    match /catalogs/{catalogId} {
+      allow read: if businessIsPublic(resource.data.businessId)
+        || ownsBusiness(resource.data.businessId)
+        || isSuperAdmin();
+      allow create: if ownsBusiness(request.resource.data.businessId)
+        || isSuperAdmin();
+      allow update, delete: if ownsBusiness(resource.data.businessId)
+        || isSuperAdmin();
+    }
+
+    match /businessVariationOptions/{optionId} {
+      allow read, write: if ownsBusiness(resource.data.businessId)
+        || isSuperAdmin();
+      allow create: if ownsBusiness(request.resource.data.businessId)
+        || isSuperAdmin();
+    }
+
+    match /productReviews/{reviewId} {
+      allow read: if resource.data.status == "approved"
+        || ownsBusiness(resource.data.businessId)
+        || isSuperAdmin();
+      allow write: if false;
+    }
+
+    match /productReviewStats/{statsId} {
+      allow read: if businessIsPublic(resource.data.businessId)
+        || ownsBusiness(resource.data.businessId)
+        || isSuperAdmin();
+      allow write: if false;
+    }
+
+    match /orders/{orderId} {
+      allow read: if ownsBusiness(resource.data.businessId) || isSuperAdmin();
+      // All order writes remain behind validated Firebase Admin route handlers.
+      allow write: if false;
+    }
+
+    match /pageViews/{viewId} {
+      allow read: if ownsBusiness(resource.data.businessId) || isSuperAdmin();
+      allow write: if false;
+    }
+
+    match /productViews/{viewId} {
+      allow read: if ownsBusiness(resource.data.businessId) || isSuperAdmin();
+      allow write: if false;
+    }
+
+    match /productShares/{shareId} {
+      allow read: if ownsBusiness(resource.data.businessId) || isSuperAdmin();
+      allow write: if false;
+    }
+
+    match /reviewRequests/{requestId} {
+      allow read: if ownsBusiness(resource.data.businessId) || isSuperAdmin();
+      allow write: if false;
+    }
+
+    match /reviewUploads/{uploadId} {
+      allow read, write: if false;
+    }
+
+    // Customer checkout, carts, uploads, reviews, and analytics are written
+    // through validated callable/HTTP functions. Business reads also go
+    // through functions until query-scoped owner rules are introduced.
+    match /{privateCollection}/{documentId} {
+      allow read, write: if false;
+    }
+  }
+}

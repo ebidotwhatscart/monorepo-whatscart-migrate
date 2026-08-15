@@ -1,0 +1,8 @@
+contracts/
+docs/
+scripts/
+src/**/__tests__/
+src/test/
+src/main.tsx
+src/vite-env.d.ts
+
