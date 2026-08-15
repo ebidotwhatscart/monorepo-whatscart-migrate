@@ -1,114 +1,91 @@
 # WhatsCart migration
 
-This workspace is the target of the WhatsCart platform migration. The current
-production source remains in the sibling `../whatsCartNew` repository and is
-treated as read-only migration input.
+This workspace is the Next.js/Vercel + Firebase target for WhatsCart. The old
+production application remains in the sibling `../whatsCartNew` repository and
+is treated as read-only migration input.
 
-The migration has an explicit zero-visual-drift constraint: existing element
-IDs, class names, assets, routes, and responsive behavior must remain stable.
-The source contract in [`contracts/source-contract.json`](contracts/source-contract.json)
-captures those invariants before framework or backend code is changed.
+The migration has a zero-visual-drift requirement. The source contract in
+[`contracts/source-contract.json`](contracts/source-contract.json) captures the
+existing selector strings and asset hashes; the target currently matches all
+2,491 selectors with no captured asset changes.
 
 ## Current state
 
-- Source architecture and baseline health have been audited.
-- The production source builds successfully.
-- The source test baseline is recorded in
-  [`contracts/source-baseline.json`](contracts/source-baseline.json).
-- The original React UI has been imported byte-for-byte into a Next.js 16
-  transition shell.
-- Tenant request routing, request-time metadata, JSON-LD, robots, and sitemaps
-  are implemented for the Firebase-backed target model.
-- Vercel is the confirmed web host; Firebase provides the target auth, data,
-  storage, rules, and local emulators.
-- The Next.js production build passes and Vercel CLI authentication is available
-  for the target team.
-- Firebase Auth, Firestore, and Storage emulators start successfully. The new
-  Firebase ID-token to HTTP-only session-cookie exchange also passes an
-  end-to-end emulator test.
-- Firebase private onboarding now includes verified user bootstrap, immutable
-  server-assigned roles, owned-business lookup, protected slug checks,
-  owner-scoped business-asset uploads, transactional business creation, and
-  protected settings updates. Categories, catalogs, variation options, and
-  product CRUD also have owner-authorized Firebase repositories. Business
-  uploads allow images and verified PDF FSSAI certificates, while anonymous
-  customer upload capabilities remain image-only. The visible login remains on
-  the temporary bridge until every dependent dashboard screen has a Firebase
-  repository, avoiding a broken dual-auth cutover.
-- Public businesses, products, categories, catalogs, variants, related
-  products, reviews, analytics, and customer image uploads now use Firebase.
-  Tenant storefront and product pages render real Firestore data in their
-  initial indexable HTML and continue with live Firestore subscriptions.
-- Public checkout, saved carts, order-success lookup, and mobile order history
-  now use validated Firebase APIs. Prices and totals are recomputed from
-  Firestore, order sequences are transactional, and private order/cart data is
-  protected by high-entropy customer/order capabilities rather than guessable
-  order IDs or mobile numbers.
-- Private order management now uses owner-scoped live Firestore reads and
-  authenticated server mutations. Manual orders validate products and totals,
-  allocate the same transactional order sequence, and keep billing exclusions,
-  notes, and status changes behind owner or super-admin authorization. The
-  emulator proves that an open dashboard receives order changes without a
-  refresh and cannot read another business's orders.
-- Analytics, the review lifecycle, and super-admin business/user management now
-  have Firebase repositories, protected routes, live adapters, rules, and
-  emulator coverage. Their remaining transition work is the atomic removal of
-  Clerk/Convex from the private UI.
-- Delivery caching is deployment-safe: tenant responses bypass Vercel and
-  upstream CDN storage, mutable pages and images are network-first, only
-  content-hashed Next.js assets are cache-first, and a versioned service worker
-  activates automatically. An emulator test proves that published Firestore
-  changes reach an already-open storefront without a hard refresh.
-- The UI preservation check still passes exactly: 2,491 selectors match and no
-  captured asset has changed.
+- Next.js 16 production build and strict TypeScript pass normally.
+- Firebase Auth, Firestore, Storage, public commerce, private dashboard,
+  analytics, reviews, and super-admin repositories are implemented.
+- Clerk and Convex are removed from the final runtime, dependencies, providers,
+  generated types, and environment configuration.
+- Existing owners can claim their migrated business automatically on first
+  same-email verified Firebase sign-in.
+- Wildcard storefronts are request-rendered with canonical metadata, JSON-LD,
+  robots, product/catalog sitemaps, and live Firestore subscriptions.
+- Deployment caching is freshness-safe: mutable HTML/RSC/APIs/assets bypass
+  browser, Vercel, and Cloudflare storage; only hashed Next chunks are
+  immutable. The versioned service worker activates automatically, checks for
+  updates, and reloads under the new controller without requiring a user hard
+  refresh.
+- The production Convex export → Firebase importer validates relationships and
+  Storage files, preserves IDs/relationships, performs idempotent checksum
+  writes, and verifies every target after apply.
+- The Cloudflare Vercel gateway passes unit tests and Wrangler dry-run.
+- Bubblewrap/manual Android Java source is preserved and retargeted to
+  `app.whatscart.in`; the inherited Play application-ID/signing fingerprint
+  conflict still requires owner confirmation.
+- No Vercel or Firebase project has yet been created in the currently logged-in
+  accounts, and no target deployment or production data import has run.
 
-## Migration sequence
+Overall production readiness is currently estimated at **80%**. See
+[`docs/RESUME-HERE.md`](docs/RESUME-HERE.md) for the exact evidence, remaining
+work, and continuation order.
 
-1. Keep the imported UI and route contract stable while replacing Clerk with
-   Firebase Auth.
-2. Replace the 114 Convex frontend calls with Firestore repositories and
-   server-side operations, preserving authorization and loading behavior.
-3. Export and import production data and Storage objects with count,
-   relationship, and checksum validation.
-4. Connect the Vercel project and Firebase production project, then validate
-   preview domains, wildcard tenant routing, SEO output, Cloudflare proxying,
-   and the response-cache contract.
-5. Reconcile the Bubblewrap/TWA package and asset-link identities, run browser
-   visual comparisons and the complete test suite, and only then cut DNS over.
+The latest local status check is green. The authenticated Vercel scope and
+Firebase account currently contain no projects, so no external deployment or
+production data write has been made.
 
-Clerk and Convex remain a temporary transition bridge; they are not part of the
-final architecture. Type checking is also temporarily excluded from
-`next build` while the generated Convex types are replaced. No preview or
-production deployment has been made from this workspace yet.
+## Local verification
 
-## Vercel workflow
+```bash
+npm run typecheck
+npm run build
+npm run contract:verify-ui
+npm run cloudflare:check
+```
+
+Firebase emulator suites should be run serially; parallel emulator files can
+trigger a known Firestore emulator framing fault.
+
+## Deployment commands
 
 ```bash
 npm run vercel:pull
 npm run vercel:dev
 npm run vercel:preview
 npm run vercel:production
+npm run cloudflare:check
+npm run cloudflare:deploy
 ```
 
-The deploy scripts pin Vercel CLI `59.1.3`. Preview and production deployment
-must wait until the Firebase migration and fidelity gates pass.
+Preview Firebase/Vercel must pass before production domains or the Cloudflare
+Worker are changed.
 
-## Refresh the source contract
+## Production data migration
+
+Start with
+[`docs/production-migration-runbook.md`](docs/production-migration-runbook.md).
+The default importer invocation is a read-only dry run:
 
 ```bash
-node scripts/capture-source-contract.mjs ../whatsCartNew contracts/source-contract.json
+npm run migration:convex -- --source /secure/private/whatscart-convex-export --bucket YOUR_PREVIEW_BUCKET
 ```
 
-Once the target UI exists, verify exact selector and asset preservation with:
+## Important documents
 
-```bash
-npm run contract:verify-ui
-```
-
-See [`docs/migration-audit.md`](docs/migration-audit.md) for the architecture,
-known baseline debt, and migration gates.
-
-For the exact stopping point and ordered continuation plan, begin with
-[`docs/RESUME-HERE.md`](docs/RESUME-HERE.md). It records completed work,
-verification evidence, known risks, remaining transition imports, and the
-production cutover sequence.
+- [`docs/RESUME-HERE.md`](docs/RESUME-HERE.md): completion percentage, verified
+  state, blockers, and exact next steps.
+- [`docs/migration-audit.md`](docs/migration-audit.md): original architecture
+  and migration gates.
+- [`docs/production-migration-runbook.md`](docs/production-migration-runbook.md):
+  export, dry run, apply, validation, freeze, and rollback.
+- [`docs/android-twa-audit.md`](docs/android-twa-audit.md): Android/TWA identity
+  conflict and safe handoff.

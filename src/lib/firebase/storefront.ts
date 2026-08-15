@@ -322,6 +322,18 @@ export async function getPublicCatalog(slug: string, catalogId: string) {
   };
 }
 
+export async function getPublicCatalogIds(businessId: string) {
+  const firestore = getAdminFirestore();
+  if (!firestore) return [];
+  const catalogs = await firestore
+    .collection("catalogs")
+    .where("businessId", "==", businessId)
+    .get();
+  return catalogs.docs
+    .map((snapshot) => snapshot.data().catalogId)
+    .filter((catalogId): catalogId is string => Boolean(catalogId));
+}
+
 export async function getApprovedProductReviews(
   productId: string,
   limit = 20,

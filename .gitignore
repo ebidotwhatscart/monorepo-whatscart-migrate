@@ -10,6 +10,14 @@ firestore-debug.*.log
 dist/
 build/
 *.tsbuildinfo
+*.apk
+*.aab
+*.idsig
+*.jks
+*.keystore
+bubblewrap/.gradle/
+bubblewrap/app/build/
+bubblewrap/local.properties
 .env
 .env.*
 !.env.example

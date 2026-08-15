@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json.schemastore.org/wrangler.json",
+  "name": "whatscart-vercel-gateway",
+  "main": "./tenant-proxy.ts",
+  "compatibility_date": "2026-08-15",
+  "routes": [
+    {
+      "pattern": "whatscart.in/*",
+      "zone_name": "whatscart.in"
+    },
+    {
+      "pattern": "*.whatscart.in/*",
+      "zone_name": "whatscart.in"
+    }
+  ]
+}

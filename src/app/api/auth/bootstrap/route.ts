@@ -33,16 +33,81 @@ export async function POST(request: NextRequest) {
     const identity = await verifyFirebaseRequest(request);
     const email = String(identity.email ?? "").trim().toLowerCase();
     const userRef = firestore.collection("users").doc(identity.uid);
-    const existing = await userRef.get();
-    const existingData = existing.data();
+    const now = Date.now();
+    const existingData = await firestore.runTransaction(async (transaction) => {
+      const current = await transaction.get(userRef);
+      const currentData = current.data();
+      const legacyUsers =
+        email && identity.email_verified === true
+          ? await transaction.get(
+              firestore
+                .collection("users")
+                .where("email", "==", email)
+                .limit(3),
+            )
+          : null;
+      const legacyCandidates =
+        legacyUsers?.docs.filter(
+          (document) =>
+            document.id !== identity.uid &&
+            document.data().migrationPendingLink === true &&
+            typeof document.data().legacyConvexId === "string",
+        ) ?? [];
+      if (legacyCandidates.length > 1) {
+        throw new Error("Multiple migrated accounts use this email address.");
+      }
+
+      const legacy = legacyCandidates[0];
+      const legacyData = legacy?.data();
+      const ownedBusinesses = legacy
+        ? await transaction.get(
+            firestore
+              .collection("businesses")
+              .where("ownerId", "==", legacy.id),
+          )
+        : null;
+      const createdAt =
+        typeof currentData?.createdAt === "number"
+          ? currentData.createdAt
+          : typeof legacyData?.createdAt === "number"
+            ? legacyData.createdAt
+            : typeof legacyData?._creationTime === "number"
+              ? legacyData._creationTime
+              : now;
+      const merged = {
+        ...legacyData,
+        ...currentData,
+        _creationTime: createdAt,
+        createdAt,
+        email,
+        firebaseUid: identity.uid,
+        legacyConvexId:
+          legacyData?.legacyConvexId ?? currentData?.legacyConvexId ?? null,
+        migrationPendingLink: false,
+        migratedAt: legacy ? now : currentData?.migratedAt ?? null,
+        name:
+          typeof identity.name === "string" && identity.name
+            ? identity.name
+            : currentData?.name ?? legacyData?.name ?? null,
+        role: currentData?.role ?? legacyData?.role ?? "user",
+        updatedAt: now,
+      };
+
+      transaction.set(userRef, merged, { merge: true });
+      ownedBusinesses?.docs.forEach((business) => {
+        transaction.update(business.ref, {
+          ownerId: identity.uid,
+          ownerMigratedAt: now,
+        });
+      });
+      if (legacy) transaction.delete(legacy.ref);
+      return merged;
+    });
     const isSuperAdmin =
       existingData?.role === "super_admin" ||
       configuredSuperAdminEmails().includes(email);
     const role = isSuperAdmin ? "super_admin" : "user";
-    const createdAt =
-      typeof existingData?.createdAt === "number"
-        ? existingData.createdAt
-        : Date.now();
+    const createdAt = Number(existingData.createdAt ?? now);
     await userRef.set(
       {
         _creationTime: createdAt,
@@ -54,7 +119,7 @@ export async function POST(request: NextRequest) {
             ? identity.name
             : existingData?.name ?? null,
         role,
-        updatedAt: Date.now(),
+        updatedAt: now,
       },
       { merge: true },
     );
