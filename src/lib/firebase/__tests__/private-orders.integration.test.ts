@@ -1080,7 +1080,7 @@ describeWithEmulator("Firebase private orders", () => {
     expect(deletion.status).toBe(200);
     await expect(deletion.json()).resolves.toMatchObject({
       businesses: 1,
-      clerkAccount: "deleted",
+      authAccount: "deleted",
       orders: 1,
       pageViews: 1,
       products: 1,

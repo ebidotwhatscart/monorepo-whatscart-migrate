@@ -155,7 +155,7 @@ export function Cart() {
                       <p className="text-sm text-gray-600">₹{item.price.toFixed(2)} each</p>
                       {item.customizationNotes?.length ? (
                         <ul className="mt-2 list-disc space-y-1 pl-4 text-xs text-gray-500">
-                          {item.customizationNotes.map((line) => (
+                          {item.customizationNotes.map((line: string) => (
                             <li key={line}>{line}</li>
                           ))}
                         </ul>

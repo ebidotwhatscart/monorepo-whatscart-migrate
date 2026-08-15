@@ -42,6 +42,8 @@ export function StorefrontNotFound() {
     return <GenericNotFound />;
   }
 
+  const availableCategories = categories ?? [];
+
   const whatsappUrl = business.whatsappPhone
     ? `https://wa.me/${business.whatsappPhone.replace(/\D/g, "")}`
     : null;
@@ -57,11 +59,11 @@ export function StorefrontNotFound() {
       <StorefrontHeader
         business={business}
         storefrontTheme={storefrontTheme}
-        categories={categories}
+        categories={availableCategories}
         getTotalItems={getTotalItems}
         selectedCategory="all"
         onSelectCategory={(categoryId) => {
-          window.location.href = `${storefrontPath(slug)}#${categories.find((category) => category._id === categoryId)?.name ?? ""}`;
+          window.location.href = `${storefrontPath(slug)}#${availableCategories.find((category) => category._id === categoryId)?.name ?? ""}`;
         }}
         slug={slug}
         onCartClick={() => navigate(storefrontPath(slug, "cart"))}
@@ -120,10 +122,10 @@ export function StorefrontNotFound() {
 
       <StorefrontFooter
         business={business}
-        categories={categories}
+        categories={availableCategories}
         selectedCategory="all"
         onSelectCategory={(categoryId) => {
-          window.location.href = `${storefrontPath(slug)}#${categories.find((category) => category._id === categoryId)?.name ?? ""}`;
+          window.location.href = `${storefrontPath(slug)}#${availableCategories.find((category) => category._id === categoryId)?.name ?? ""}`;
         }}
         storefrontTheme={storefrontTheme}
       />

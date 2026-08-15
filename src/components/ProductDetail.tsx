@@ -194,7 +194,7 @@ export function ProductDetail() {
   const aboutProductItems = product?.description
     ? product.description
         .split(/\.\s*|\n+/)
-        .map((item) => item.trim())
+        .map((item: string) => item.trim())
         .filter(Boolean)
     : [];
   const returnPolicyItems = product?.returnPolicy
@@ -940,7 +940,7 @@ export function ProductDetail() {
                         {(aboutProductItems.length > 0
                           ? aboutProductItems
                           : ["Product details will be confirmed on WhatsApp."]
-                        ).map((item) => (
+                        ).map((item: string) => (
                           <li key={item} className="flex gap-2">
                             <span className="inline-block w-[5px]" aria-hidden="true">&bull;</span>
                             <span>{item}</span>
@@ -1162,7 +1162,7 @@ export function ProductDetail() {
         onClose={() => setShareOpen(false)}
         url={business && product ? storefrontUrl(business.slug, `products/${productSlug(product.name, product._id, product.slug)}`) : ""}
         title={product?.name}
-        text={`Check out ${product?.name}`}
+        shareText={`Check out ${product?.name}`}
         productId={product?._id}
         businessId={business?._id}
       />

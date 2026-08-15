@@ -132,7 +132,7 @@ export function OrderDetailPage({ business }: OrderDetailPageProps) {
         customerName: order.customerName,
         businessName: order.business?.name ?? "the store",
         orderNumber: order.orderId,
-        items: items.map((item) => ({
+        items: items.map((item: any) => ({
           name: item.name,
           quantity: item.quantity,
           price: item.price,
@@ -262,7 +262,7 @@ export function OrderDetailPage({ business }: OrderDetailPageProps) {
             </span>
           </div>
           <div className="mt-4 space-y-3">
-            {items.map((item, idx) => {
+            {items.map((item: any, idx: number) => {
               const targetProductId = item.product?._id ?? item.productId;
               const hasImage = Boolean(
                 item.product?.imageUrls?.[0] ?? item.image,
@@ -448,7 +448,7 @@ export function OrderDetailPage({ business }: OrderDetailPageProps) {
                 onClick={() => void handleAskForFeedback()}
                 disabled={
                   isOpeningFeedback ||
-                  !items.some((item) => Boolean(item.productId))
+                  !items.some((item: any) => Boolean(item.productId))
                 }
                 className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-[#056664] px-4 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
               >
@@ -546,7 +546,7 @@ export function OrderDetailPage({ business }: OrderDetailPageProps) {
                         Customer photos
                       </p>
                       <div className="mt-2 flex flex-wrap gap-2">
-                        {review.imageUrls.map((url, index) => (
+                        {review.imageUrls.map((url: string, index: number) => (
                           <a
                             key={url}
                             href={url}

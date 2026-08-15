@@ -66,7 +66,6 @@ function observeBusinessList(
             isEnabled: business.isEnabled !== false,
             name: business.name,
             orderCount: orderCounts.get(String(business._id)) ?? 0,
-            ownerClerkId: owner?.clerkId ?? null,
             ownerEmail: owner?.email ?? "",
             ownerId,
             ownerName: business.ownerName ?? owner?.name ?? "Unknown owner",

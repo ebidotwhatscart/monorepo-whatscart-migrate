@@ -7,9 +7,11 @@ vi.mock("react-router-dom", () => ({
   useNavigate: () => mockNavigate,
 }));
 
-vi.mock("convex/react", () => ({
-  useQuery: () => [],
-  useMutation: () => vi.fn(),
+vi.mock("../../lib/firebase/hooks", () => ({
+  useFirebaseQuery: () => [],
+}));
+vi.mock("../../lib/firebase/mutations", () => ({
+  useFirebaseMutation: () => vi.fn(),
 }));
 
 describe("DashboardHome Business Verification Banner", () => {

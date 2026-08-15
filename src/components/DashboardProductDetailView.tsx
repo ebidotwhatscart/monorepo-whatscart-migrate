@@ -293,7 +293,7 @@ export function DashboardProductDetailView({
         onClose={() => setShareOpen(false)}
         url={product ? storefrontUrl(business.slug, `products/${productSlug(product.name, product._id, product.slug)}`) : ""}
         title={product?.name}
-        text={`Check out ${product?.name}`}
+        shareText={`Check out ${product?.name}`}
         productId={product?._id}
         businessId={business?._id}
       />

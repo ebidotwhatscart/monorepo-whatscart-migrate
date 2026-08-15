@@ -26,19 +26,162 @@ type OperationModule = Record<
   OperationReference<any, Record<string, unknown>, any>
 >;
 
+export type LooseDocument = {
+  [key: string]: any;
+  _creationTime: number;
+  _id: any;
+  aboutProduct: any[];
+  aboutProductItems: any[];
+  businessId: any;
+  businessType: any;
+  catalogId: any;
+  colorName: any;
+  colorSwatch: any;
+  createdAt: any;
+  customerAddress: any;
+  customerDoorNumber: any;
+  date: any;
+  imageUrls: any[];
+  imageIds: any[];
+  inStock: any;
+  isEnabled: any;
+  items: any[];
+  name: any;
+  orderCount: any;
+  orders: any;
+  ownerEmail: any;
+  ownerId: any;
+  ownerName: any;
+  price: any;
+  productCount: any;
+  productIds: any[];
+  products: any[];
+  revenue: any;
+  reviews: any[];
+  slug: any;
+  sizes: any[];
+  sizesData: any[];
+  themeColor: any;
+  updatedAt: any;
+  variantType: any;
+  variantValue: any;
+  variants: any[];
+  whatsappPhone: any;
+};
+
+type Query<Result = any> = OperationReference<
+  "query",
+  Record<string, unknown>,
+  Result
+>;
+type Mutation<Result = any> = OperationReference<
+  "mutation",
+  Record<string, unknown>,
+  Result
+>;
+type Action<Result = any> = OperationReference<
+  "action",
+  Record<string, unknown>,
+  Result
+>;
+
 type OperationApi = {
-  adminDeletion: OperationModule;
-  analytics: OperationModule;
-  auth: OperationModule;
-  businesses: OperationModule;
-  businessVariationOptions: OperationModule;
-  carts: OperationModule;
-  catalogs: OperationModule;
-  categories: OperationModule;
-  orders: OperationModule;
-  products: OperationModule;
-  reviews: OperationModule;
-  superAdmin: OperationModule;
+  adminDeletion: {
+    deleteUserAndOwnedDataByEmail: Action;
+  };
+  analytics: {
+    getConversionRate: Query<number>;
+    getProductPerformance: Query<LooseDocument>;
+    getSalesTrend: Query<LooseDocument[]>;
+    getTopCustomers: Query<LooseDocument[]>;
+    getTopProducts: Query<LooseDocument[]>;
+    getTotalOrders: Query<number>;
+    getTotalPageViews: Query<number>;
+    getTotalRevenue: Query<number>;
+    getTotalVisitors: Query<number>;
+    getTrafficSources: Query<LooseDocument[]>;
+    trackPageView: Mutation;
+    trackProductShare: Mutation;
+    trackProductView: Mutation;
+  };
+  auth: {
+    ensureUserExists: Mutation<string>;
+    loggedInUser: Query<LooseDocument | null>;
+  };
+  businesses: {
+    checkSlugAvailability: Query<boolean>;
+    createBusiness: Mutation<string>;
+    generateUploadUrl: Mutation<string>;
+    getBusinessBySlug: Query<LooseDocument | null>;
+    getFeaturedProducts: Query<LooseDocument[]>;
+    getUserBusiness: Query<LooseDocument | null>;
+    updateBusiness: Mutation;
+  };
+  businessVariationOptions: {
+    addCustomVariationType: Mutation;
+    addCustomVariationValue: Mutation;
+    getBusinessVariationOptions: Query<LooseDocument[]>;
+  };
+  carts: {
+    getCart: Query<LooseDocument | null>;
+    saveCart: Mutation<string>;
+  };
+  catalogs: {
+    createCatalog: Mutation<LooseDocument>;
+    deleteCatalog: Mutation;
+    getBusinessCatalogs: Query<LooseDocument[]>;
+    getPublicCatalog: Query<LooseDocument | null>;
+    updateCatalog: Mutation;
+  };
+  categories: {
+    createCategory: Mutation<string>;
+    deleteCategory: Mutation;
+    getBusinessCategories: Query<LooseDocument[]>;
+    getPublicCategories: Query<LooseDocument[]>;
+    reorderCategories: Mutation;
+  };
+  orders: {
+    createManualOrder: Mutation;
+    createOrder: Mutation<LooseDocument>;
+    generateCustomerUploadUrl: Mutation<string>;
+    getBusinessOrderDetail: Query<LooseDocument | null>;
+    getBusinessOrders: Query<LooseDocument[]>;
+    getBusinessOrderStats: Query<LooseDocument>;
+    getOrderByOrderId: Query<LooseDocument | null>;
+    getOrdersByMobile: Query<LooseDocument[]>;
+    resolveCustomerUploadUrl: Mutation<string>;
+    setOrderBillingExclusion: Mutation;
+    updateOrderNotes: Mutation;
+    updateOrderStatus: Mutation;
+  };
+  products: {
+    createProduct: Mutation<string>;
+    deleteProduct: Mutation;
+    getBusinessProducts: Query<LooseDocument[]>;
+    getProduct: Query<LooseDocument | null>;
+    getProductVariants: Query<LooseDocument[]>;
+    getPublicProductBySlug: Query<LooseDocument | null>;
+    getPublicProducts: Query<LooseDocument[]>;
+    getRelatedProducts: Query<LooseDocument[]>;
+    searchProducts: Query<LooseDocument[]>;
+    updateProduct: Mutation;
+  };
+  reviews: {
+    createReviewRequest: Mutation;
+    generateReviewUploadUrl: Mutation<string>;
+    getApprovedProductReviews: Query<LooseDocument>;
+    getBusinessReviewRequestStates: Query<LooseDocument[]>;
+    getOrderReviews: Query<LooseDocument>;
+    getReviewForm: Query<LooseDocument | null>;
+    moderateReview: Mutation;
+    registerReviewUpload: Mutation;
+    submitReviews: Mutation;
+  };
+  superAdmin: {
+    getBusinessForAdmin: Query<LooseDocument | null>;
+    listBusinesses: Query<LooseDocument[]>;
+    setBusinessEnabled: Mutation;
+  };
 };
 
 function createOperationModule(moduleName: string): OperationModule {
@@ -59,18 +202,20 @@ function createOperationModule(moduleName: string): OperationModule {
 }
 
 export const api: OperationApi = {
-  adminDeletion: createOperationModule("adminDeletion"),
-  analytics: createOperationModule("analytics"),
-  auth: createOperationModule("auth"),
-  businesses: createOperationModule("businesses"),
-  businessVariationOptions: createOperationModule("businessVariationOptions"),
-  carts: createOperationModule("carts"),
-  catalogs: createOperationModule("catalogs"),
-  categories: createOperationModule("categories"),
-  orders: createOperationModule("orders"),
-  products: createOperationModule("products"),
-  reviews: createOperationModule("reviews"),
-  superAdmin: createOperationModule("superAdmin"),
+  adminDeletion: createOperationModule("adminDeletion") as OperationApi["adminDeletion"],
+  analytics: createOperationModule("analytics") as OperationApi["analytics"],
+  auth: createOperationModule("auth") as OperationApi["auth"],
+  businesses: createOperationModule("businesses") as OperationApi["businesses"],
+  businessVariationOptions: createOperationModule(
+    "businessVariationOptions",
+  ) as OperationApi["businessVariationOptions"],
+  carts: createOperationModule("carts") as OperationApi["carts"],
+  catalogs: createOperationModule("catalogs") as OperationApi["catalogs"],
+  categories: createOperationModule("categories") as OperationApi["categories"],
+  orders: createOperationModule("orders") as OperationApi["orders"],
+  products: createOperationModule("products") as OperationApi["products"],
+  reviews: createOperationModule("reviews") as OperationApi["reviews"],
+  superAdmin: createOperationModule("superAdmin") as OperationApi["superAdmin"],
 };
 
 export function getOperationName(reference: OperationReference): string {

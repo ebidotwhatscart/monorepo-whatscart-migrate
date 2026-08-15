@@ -295,41 +295,48 @@ function FooterSocialIcons({
   };
   storefrontTheme: StorefrontTheme;
 }) {
+  const {
+    facebook = "",
+    x = "",
+    linkedin = "",
+    youtube = "",
+  } = socialLinks ?? {};
+
   return (
     <div
       className="flex w-[171px] items-center justify-between"
       style={{ color: storefrontTheme.footerText }}
     >
-      {socialLinks?.x?.length > 0 && (
+      {x.length > 0 && (
         <FooterSocialLink
-          href={socialLinks.x}
+          href={x}
           label="X"
           storefrontTheme={storefrontTheme}
         >
           <FigmaXIcon />
         </FooterSocialLink>
       )}
-      {socialLinks?.facebook?.length > 0 && (
+      {facebook.length > 0 && (
         <FooterSocialLink
-          href={socialLinks.facebook}
+          href={facebook}
           label="Facebook"
           storefrontTheme={storefrontTheme}
         >
           <FigmaFacebookIcon />
         </FooterSocialLink>
       )}
-      {socialLinks?.linkedin?.length > 0 && (
+      {linkedin.length > 0 && (
         <FooterSocialLink
-          href={socialLinks.linkedin}
+          href={linkedin}
           label="LinkedIn"
           storefrontTheme={storefrontTheme}
         >
           <FigmaLinkedInIcon />
         </FooterSocialLink>
       )}
-      {socialLinks?.youtube?.length > 0 && (
+      {youtube.length > 0 && (
         <FooterSocialLink
-          href={socialLinks.youtube}
+          href={youtube}
           label="YouTube"
           storefrontTheme={storefrontTheme}
         >

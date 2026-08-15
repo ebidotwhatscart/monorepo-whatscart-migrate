@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, test, expect, vi, beforeEach } from "vitest";
 import { CreateManualOrderModal } from "../CreateManualOrderModal";
-import { Id } from "../../../convex/_generated/dataModel";
+import type { Id } from "../../lib/firebase/operations";
 
 const mockCreateManualOrder = vi.fn();
 const mockProducts = [
@@ -23,9 +23,11 @@ const mockProducts = [
   },
 ];
 
-vi.mock("convex/react", () => ({
-  useQuery: () => mockProducts,
-  useMutation: () => mockCreateManualOrder,
+vi.mock("../../lib/firebase/hooks", () => ({
+  useFirebaseQuery: () => mockProducts,
+}));
+vi.mock("../../lib/firebase/mutations", () => ({
+  useFirebaseMutation: () => mockCreateManualOrder,
 }));
 
 vi.mock("sonner", () => ({

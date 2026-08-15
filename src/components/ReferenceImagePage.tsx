@@ -3,7 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { useFirebaseQuery as useQuery } from "../lib/firebase/hooks";
 import { Download } from "lucide-react";
 import { api } from "../lib/firebase/operations";
-import { buildConvexStorageUrl } from "../lib/orderFiles";
+import { resolveReferenceImageUrl } from "../lib/orderFiles";
 import { getTenantSlug, storefrontPath } from "../lib/urls";
 import { useRuntimeHostname } from "../context/RuntimeLocationContext";
 import { StorefrontNotFound } from "./StorefrontNotFound";
@@ -19,11 +19,11 @@ export function ReferenceImagePage() {
   const [hasError, setHasError] = useState(false);
 
   const fileUrl = useMemo(
-    () => (fileId ? buildConvexStorageUrl(fileId) : ""),
+    () => (fileId ? resolveReferenceImageUrl(fileId) : ""),
     [fileId],
   );
   const isLikelyStorageId = Boolean(
-    fileId && /^[a-z0-9]{20,}$/i.test(fileId),
+    fileId && /^[a-z0-9_-]{20,}$/i.test(fileId),
   );
 
   if (business === undefined) {

@@ -1,12 +1,12 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { useQuery } from "convex/react";
+import { useFirebaseQuery as useQuery } from "../../lib/firebase/hooks";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { StoreCartPage } from "../StoreCartPage";
 
-vi.mock("convex/react", () => ({
-  useQuery: vi.fn(),
+vi.mock("../../lib/firebase/hooks", () => ({
+  useFirebaseQuery: vi.fn(),
 }));
 
 const mockUpdateQuantity = vi.fn();

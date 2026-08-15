@@ -26,7 +26,7 @@ import {
 import { storefrontPath } from "../lib/urls";
 import {
   buildReferenceImagePath,
-  extractConvexStorageFileId,
+  extractReferenceImageId,
   extractReferenceImageUrlFromLine,
   isReferenceImageLine,
 } from "../lib/orderFiles";
@@ -83,7 +83,7 @@ export function OrderSuccessPage() {
     ? extractReferenceImageUrlFromLine(referenceImageLine)
     : "";
   const referenceImageFileId = referenceImageUrl
-    ? extractConvexStorageFileId(referenceImageUrl)
+    ? extractReferenceImageId(referenceImageUrl)
     : "";
   const referenceImagePagePath =
     business?.slug && referenceImageFileId
