@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#111910"/>
+  <rect x="60" y="60" width="1080" height="510" rx="32" fill="#1a2319"/>
+  <text x="600" y="280" text-anchor="middle" font-size="72" font-family="Arial, sans-serif" font-weight="800" fill="#ffffff">WhatsCart</text>
+  <text x="600" y="350" text-anchor="middle" font-size="28" font-family="Arial, sans-serif" fill="#94a3b8">Discover unique products from independent brands</text>
+  <circle cx="600" cy="450" r="8" fill="#3DAC35"/>
+</svg>

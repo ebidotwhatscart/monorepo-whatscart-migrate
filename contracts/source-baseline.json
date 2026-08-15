@@ -1,0 +1,57 @@
+{
+  "capturedAt": "2026-08-15T13:02:49.000Z",
+  "sourceRepository": "../whatsCartNew",
+  "sourceBranch": "main",
+  "sourceWorkingTreeClean": true,
+  "build": {
+    "command": "npm run build",
+    "passed": true,
+    "transformedModules": 1980,
+    "mainJavaScriptBytes": 1114300,
+    "mainJavaScriptGzipBytes": 310310,
+    "warnings": [
+      "The main JavaScript chunk exceeds Vite's 500 kB warning threshold.",
+      "The local caniuse-lite dataset is seven months old."
+    ]
+  },
+  "tests": {
+    "command": "npx vitest run --reporter=json",
+    "passed": false,
+    "total": 112,
+    "passedCount": 90,
+    "failedCount": 22,
+    "failedFiles": [
+      "src/components/__tests__/business-setup-brand-palette.test.tsx",
+      "src/components/__tests__/business-setup-phone-validation.test.tsx",
+      "src/components/__tests__/catalog-editor.test.tsx",
+      "src/components/__tests__/dashboard-product-routes.test.tsx",
+      "src/components/__tests__/product-form-business-types.test.tsx",
+      "src/components/__tests__/store-settings-brand-palette.test.tsx",
+      "src/components/__tests__/storefront-redesign.test.tsx"
+    ]
+  },
+  "android": {
+    "rootModule": {
+      "command": "./gradlew :app:assembleDebug --no-daemon",
+      "passed": true,
+      "targetOrigin": "https://app.whatscart.in",
+      "applicationId": "in.whatscart.app.twa"
+    },
+    "nestedBubblewrapModule": {
+      "command": "./gradlew :app:assembleDebug --no-daemon",
+      "passed": true,
+      "targetOrigin": "https://whatscart.netlify.app",
+      "applicationId": "app.netlify.whatscart.twa"
+    },
+    "trustMappingVerified": false,
+    "warnings": [
+      "The public assetlinks package in.whatscart.twa does not match the root module applicationId in.whatscart.app.twa.",
+      "The nested Bubblewrap assetlinks package app.netlify.whats_cart_dev.twa does not match its applicationId app.netlify.whatscart.twa.",
+      "Both builds use Java 8 source/target settings that JDK 21 reports as obsolete.",
+      "Both builds use Gradle features reported as incompatible with Gradle 9.0."
+    ]
+  },
+  "instructionIssues": [
+    "AGENTS.md requires convex/_generated/ai/guidelines.md before Convex work, but that file is absent from the source working tree."
+  ]
+}

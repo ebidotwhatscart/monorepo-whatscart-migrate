@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "in.whatscart.twa",
+      "sha256_cert_fingerprints": [
+        "CF:44:BC:10:1B:FC:A5:E0:7E:F1:F8:CF:27:ED:E0:AF:E5:5F:1E:BD:6B:52:58:80:87:0F:5E:62:3F:18:4A:84"
+      ]
+    }
+  }
+]
