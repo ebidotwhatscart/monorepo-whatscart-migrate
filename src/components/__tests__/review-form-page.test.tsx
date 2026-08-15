@@ -1,14 +1,17 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { useMutation, useQuery } from "convex/react";
-import { getFunctionName } from "convex/server";
+import { useFirebaseMutation as useMutation } from "../../lib/firebase/mutations";
+import { useFirebaseQuery as useQuery } from "../../lib/firebase/hooks";
+import { getOperationName as getFunctionName } from "../../lib/firebase/operations";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ReviewFormPage } from "../ReviewFormPage";
 
-vi.mock("convex/react", () => ({
-  useQuery: vi.fn(),
-  useMutation: vi.fn(),
+vi.mock("../../lib/firebase/hooks", () => ({
+  useFirebaseQuery: vi.fn(),
+}));
+vi.mock("../../lib/firebase/mutations", () => ({
+  useFirebaseMutation: vi.fn(),
 }));
 
 const toastError = vi.fn();

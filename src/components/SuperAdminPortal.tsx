@@ -45,7 +45,6 @@ type BusinessSummary = {
   ownerId: Id<"users">;
   ownerName: string;
   ownerEmail: string;
-  ownerClerkId: string | null;
   productCount: number;
   orderCount: number;
   isEnabled: boolean;
@@ -466,14 +465,14 @@ function DeleteUserDataModal({
           <label className="block">
             <span className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700">
               {mode === "email" ? <Users size={15} /> : <KeyRound size={15} />}
-              {mode === "email" ? "User email" : "Convex or Clerk user ID"}
+              {mode === "email" ? "User email" : "Firebase user ID"}
             </span>
             <input
               autoFocus
               type={mode === "email" ? "email" : "text"}
               value={identifier}
               onChange={(event) => setIdentifier(event.target.value)}
-              placeholder={mode === "email" ? "owner@example.com" : "j57... or user_..."}
+              placeholder={mode === "email" ? "owner@example.com" : "Firebase user ID"}
               className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
             />
           </label>

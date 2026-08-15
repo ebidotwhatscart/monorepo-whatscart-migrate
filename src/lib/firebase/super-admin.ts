@@ -125,18 +125,20 @@ async function targetByIdentifier(
   } catch {
     // A migrated data record can remain after an already-removed Auth account.
   }
-  let userDocument = authUser
-    ? await firestore.collection("users").doc(authUser.uid).get()
-    : null;
+  let userDocument = await firestore
+    .collection("users")
+    .doc(authUser?.uid ?? identifier)
+    .get();
   if (!userDocument?.exists) {
-    const field = usingEmail ? "email" : "clerkId";
-    const users = await firestore
-      .collection("users")
-      .where(field, "==", identifier)
-      .limit(2)
-      .get();
-    if (users.size > 1) throw new Error("User data is inconsistent.");
-    userDocument = users.empty ? null : users.docs[0];
+    if (usingEmail) {
+      const users = await firestore
+        .collection("users")
+        .where("email", "==", identifier)
+        .limit(2)
+        .get();
+      if (users.size > 1) throw new Error("User data is inconsistent.");
+      userDocument = users.empty ? userDocument : users.docs[0];
+    }
   }
   const userId = authUser?.uid ?? userDocument?.id ?? (!usingEmail ? identifier : "");
   if (!userId) return null;
@@ -272,14 +274,14 @@ export async function deleteUserAndOwnedDataBySuperAdmin(
     await target.userDocument.ref.delete();
     counts.users = 1;
   }
-  let clerkAccount: "already_missing" | "deleted" = "already_missing";
+  let authAccount: "already_missing" | "deleted" = "already_missing";
   if (target.authUser) {
     await auth.deleteUser(target.authUser.uid);
-    clerkAccount = "deleted";
+    authAccount = "deleted";
   }
   return {
     ...counts,
-    clerkAccount,
+    authAccount,
     email:
       target.authUser?.email ??
       (typeof target.userDocument?.data()?.email === "string"

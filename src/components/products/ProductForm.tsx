@@ -438,7 +438,7 @@ export function ProductForm({
     if (businessType === "garments") {
       return {
         audience,
-        sizeFormat,
+        sizeFormat: sizeFormat === "numeric" ? "numeric" : "alpha",
       };
     }
 

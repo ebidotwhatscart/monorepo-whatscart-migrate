@@ -14,7 +14,6 @@ const businesses = [
     ownerId: "user_123",
     ownerName: "Asha",
     ownerEmail: "asha@example.com",
-    ownerClerkId: "user_clerk123",
     productCount: 8,
     orderCount: 4,
     createdAt: 1,
@@ -22,21 +21,22 @@ const businesses = [
   },
 ];
 
-vi.mock("@clerk/clerk-react", () => ({
-  SignInButton: ({ children }: { children: ReactNode }) => children,
-  UserButton: () => <div aria-label="User menu" />,
-}));
-
-vi.mock("convex/react", () => ({
+vi.mock("../../lib/firebase/auth-ui", () => ({
   Authenticated: ({ children }: { children: ReactNode }) => children,
   Unauthenticated: () => null,
-  useQuery: vi.fn((_query, args) =>
+  SignInButton: ({ children }: { children: ReactNode }) => children,
+  UserButton: () => null,
+}));
+vi.mock("../../lib/firebase/hooks", () => ({
+  useFirebaseQuery: vi.fn((_query, args) =>
     args === undefined
       ? { _id: "admin_123", email: "admin@example.com", role: "super_admin" }
       : businesses,
   ),
-  useMutation: vi.fn(() => mockSetBusinessEnabled),
-  useAction: vi.fn(() => mockDeleteUserData),
+}));
+vi.mock("../../lib/firebase/mutations", () => ({
+  useFirebaseMutation: vi.fn(() => mockSetBusinessEnabled),
+  useFirebaseAction: vi.fn(() => mockDeleteUserData),
 }));
 
 vi.mock("sonner", () => ({
@@ -55,7 +55,7 @@ describe("SuperAdminPortal", () => {
     mockDeleteUserData.mockReset().mockResolvedValue({
       identifier: "user_123",
       email: "asha@example.com",
-      clerkAccount: "already_missing",
+      authAccount: "already_missing",
       users: 1,
       businesses: 1,
       categories: 2,
@@ -95,7 +95,7 @@ describe("SuperAdminPortal", () => {
     ).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "User ID" }));
-    fireEvent.change(screen.getByLabelText("Convex or Clerk user ID"), {
+    fireEvent.change(screen.getByLabelText("Firebase user ID"), {
       target: { value: "user_123" },
     });
     fireEvent.change(screen.getByLabelText(/type the id again/i), {

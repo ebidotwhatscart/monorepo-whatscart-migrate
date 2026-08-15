@@ -284,7 +284,7 @@ export function ProductVariationSection({
                   <span
                     className="h-5 w-5 rounded-full border border-slate-300"
                     style={{ backgroundColor: variant.colorSwatch }}
-                    title={variant.variantValue || variant.colorName}
+                    title={variant.variantValue || variant.colorName || undefined}
                   />
                 )}
                 <span className="text-sm font-medium text-slate-700">

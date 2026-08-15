@@ -86,6 +86,7 @@ export function CatalogsPage({
   const activeEditingCatalog = routeEditingCatalog ?? editingCatalog;
 
   const [shareUrl, setShareUrl] = useState("");
+  const [shareTitle, setShareTitle] = useState("");
   const [shareOpen, setShareOpen] = useState(false);
 
   const getCatalogUrl = (catalogId: string) =>
@@ -93,6 +94,7 @@ export function CatalogsPage({
 
   const handleShareCollection = (catalog: Catalog) => {
     setShareUrl(getCatalogUrl(catalog.catalogId));
+    setShareTitle(`Collection: ${catalog.name}`);
     setShareOpen(true);
   };
 
@@ -340,7 +342,7 @@ export function CatalogsPage({
         isOpen={shareOpen}
         onClose={() => setShareOpen(false)}
         url={shareUrl}
-        title={`Collection: ${activeEditingCatalog?.name ?? ""}`}
+        title={shareTitle}
       />
     </div>
   );

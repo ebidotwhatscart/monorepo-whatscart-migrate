@@ -23,7 +23,7 @@ import {
 } from "../lib/orderDetails";
 import {
   buildReferenceImagePath,
-  extractConvexStorageFileId,
+  extractReferenceImageId,
   extractReferenceImageUrlFromLine,
 } from "../lib/orderFiles";
 import {
@@ -199,7 +199,7 @@ export function CheckoutPage() {
       : [];
   const normalizedCustomizationLines = customizationLines.map((line) => {
     const imageUrl = extractReferenceImageUrlFromLine(line);
-    const fileId = imageUrl ? extractConvexStorageFileId(imageUrl) : "";
+    const fileId = imageUrl ? extractReferenceImageId(imageUrl) : "";
 
     if (!slug || !fileId) {
       return line;

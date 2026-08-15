@@ -1,13 +1,13 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { useQuery } from "convex/react";
+import { useFirebaseQuery as useQuery } from "../../lib/firebase/hooks";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Storefront } from "../Storefront";
 import { createStorefrontTheme } from "../../lib/storefrontTheme";
 
-vi.mock("convex/react", () => ({
-  useQuery: vi.fn(),
+vi.mock("../../lib/firebase/hooks", () => ({
+  useFirebaseQuery: vi.fn(),
 }));
 
 const mockAddItem = vi.fn();

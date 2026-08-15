@@ -13,7 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { api, type Id } from "../lib/firebase/operations";
-import type { BusinessType, ProductTypeDetails } from "../types/product";
+import type { BusinessType, ProductTypeDetails, StoredBusinessType } from "../types/product";
 import { getStorefrontCopy, getProductMetaChips } from "./products/storefrontVariants";
 import { normalizeBusinessType } from "../types/product";
 import { useCart } from "../context/CartContext";
@@ -144,7 +144,7 @@ export function Storefront() {
     brandPalette: business?.brandPalette,
   });
   const businessType: BusinessType = normalizeBusinessType(
-    (business?.businessType as string) ?? "garments",
+    (business?.businessType as StoredBusinessType | undefined) ?? "garments",
   );
   const storefrontCopy = getStorefrontCopy(businessType);
 
@@ -304,7 +304,7 @@ export function Storefront() {
               onClick={() => setSelectedCategory("all")}
               storefrontTheme={storefrontTheme}
             />
-            {categories.map((category) => (
+            {(categories ?? []).map((category) => (
               <CategoryChip
                 key={category._id}
                 label={category.name}
@@ -317,7 +317,7 @@ export function Storefront() {
         </section>
 
         <DesktopCollectionNav
-          categories={categories}
+          categories={categories ?? []}
           selectedCategory={selectedCategory}
           onSelectCategory={handleCategorySelect}
           storefrontTheme={storefrontTheme}

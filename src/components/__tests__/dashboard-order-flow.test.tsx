@@ -1,10 +1,11 @@
 import { render, screen, waitFor } from "@testing-library/react";
-import { useMutation, useQuery } from "convex/react";
-import { getFunctionName } from "convex/server";
+import { useFirebaseMutation as useMutation } from "../../lib/firebase/mutations";
+import { useFirebaseQuery as useQuery } from "../../lib/firebase/hooks";
+import { getOperationName as getFunctionName } from "../../lib/firebase/operations";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { api } from "../../../convex/_generated/api";
+import { api } from "../../lib/firebase/operations";
 import { OrderDetailPage } from "../OrderDetailPage";
 import { OrderManagement } from "../OrderManagement";
 import { OrderProductModal } from "../OrderProductModal";
@@ -13,9 +14,11 @@ const mockUpdateOrderStatus = vi.fn();
 const mockSetOrderBillingExclusion = vi.fn();
 const mockCreateReviewRequest = vi.fn();
 
-vi.mock("convex/react", () => ({
-  useQuery: vi.fn(),
-  useMutation: vi.fn(() => mockUpdateOrderStatus),
+vi.mock("../../lib/firebase/hooks", () => ({
+  useFirebaseQuery: vi.fn(),
+}));
+vi.mock("../../lib/firebase/mutations", () => ({
+  useFirebaseMutation: vi.fn(() => mockUpdateOrderStatus),
 }));
 
 const mockOrder = {

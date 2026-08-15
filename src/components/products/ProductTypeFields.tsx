@@ -13,13 +13,15 @@ type SizeRow = {
   price: string;
 };
 
+type SizeFormat = "alpha" | "numeric" | "weight" | "quantity";
+
 interface ProductTypeFieldsProps {
   businessType: BusinessType;
   audience: ProductAudience;
   dietaryClassification?: DietaryClassification;
   customizationEnabled: boolean;
   customizationOptions: ProductCustomizationOption[];
-  sizeFormat: "alpha" | "numeric";
+  sizeFormat: SizeFormat;
   sizes: SizeRow[];
   priceError?: string;
   hideSizeSection?: boolean;
@@ -31,7 +33,7 @@ interface ProductTypeFieldsProps {
   onCustomizationOptionsChange: (
     customizationOptions: ProductCustomizationOption[],
   ) => void;
-  onSizeFormatChange: (sizeFormat: "alpha" | "numeric") => void;
+  onSizeFormatChange: (sizeFormat: SizeFormat) => void;
   onUpdateSizeRow: (
     index: number,
     key: keyof SizeRow,
@@ -228,9 +230,7 @@ export function ProductTypeFields({
                         value={option.value}
                         checked={sizeFormat === option.value}
                         onChange={() =>
-                          onSizeFormatChange(
-                            option.value as "weight" | "quantity",
-                          )
+                          onSizeFormatChange(option.value as SizeFormat)
                         }
                         className="h-4 w-4 accent-[#46b038]"
                       />

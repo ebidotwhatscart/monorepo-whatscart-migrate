@@ -51,7 +51,7 @@ const BUSINESS_TYPES = [
   { value: "garments", label: "Garments", icon: Shirt },
   { value: "home_bakery", label: "Home Bakery", icon: Sparkles },
   { value: "handicrafts", label: "Handicrafts", icon: PaintbrushVertical },
-];
+] as const;
 
 const LANGUAGES = [
   "English",
@@ -112,7 +112,7 @@ const STEPS = [
   },
 ] as const;
 
-type Step = (typeof STEPS)[number]["id"];
+type Step = "welcome" | (typeof STEPS)[number]["id"];
 
 interface BusinessSetupProps {
   onCreated?: () => void;
@@ -471,7 +471,7 @@ export function BusinessSetup({ onCreated, onFinish }: BusinessSetupProps) {
     branding: Boolean(logoFile),
     review: true,
     complete: true,
-  } satisfies Record<Step, boolean>;
+  } satisfies Record<Exclude<Step, "welcome">, boolean>;
 
   const nextStep = () => {
     if (step !== "welcome" && !canContinue[step]) {

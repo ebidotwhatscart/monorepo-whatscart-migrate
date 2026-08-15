@@ -120,7 +120,7 @@ export function ProductReviewsSection({
               )}
               {review.imageUrls.length > 0 && (
                 <div className="mt-4 flex flex-wrap gap-2">
-                  {review.imageUrls.map((url, index) => (
+                  {review.imageUrls.map((url: string, index: number) => (
                     <a key={url} href={url} target="_blank" rel="noreferrer">
                       <img
                         src={url}

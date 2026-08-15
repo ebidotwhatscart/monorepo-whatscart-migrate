@@ -72,6 +72,7 @@ interface Business {
 
 interface StoreSettingsProps {
   business: Business;
+  showHeader?: boolean;
 }
 
 const LANGUAGES = [
@@ -147,7 +148,7 @@ function getStorefrontPalettePreview(palette: GeneratedBrandPalette): string[] {
   return palette.colors;
 }
 
-export function StoreSettings({ business }: StoreSettingsProps) {
+export function StoreSettings({ business, showHeader = true }: StoreSettingsProps) {
   const initialSelectedPalette = getInitialSelectedPalette(business);
   const [name, setName] = useState(business.name);
   const [whatsappPhone, setWhatsappPhone] = useState(business.whatsappPhone);
@@ -548,7 +549,7 @@ export function StoreSettings({ business }: StoreSettingsProps) {
     <>
       <div className="bg-gray-50 flex flex-col">
         {/* Header */}
-        <div className="bg-white px-5 pt-6 pb-4 flex items-center justify-between border-b border-gray-100">
+        {showHeader && <div className="bg-white px-5 pt-6 pb-4 flex items-center justify-between border-b border-gray-100">
           <h1 className="text-lg font-bold text-gray-900">Store Settings</h1>
           {saveStatus === "saving" && (
             <span className="text-xs font-semibold text-amber-600 flex items-center gap-1.5">
@@ -568,7 +569,7 @@ export function StoreSettings({ business }: StoreSettingsProps) {
               Save failed
             </span>
           )}
-        </div>
+        </div>}
 
       <div className="flex-1 overflow-y-auto px-4 py-5 space-y-5 pb-28">
         {/* Business Identity */}

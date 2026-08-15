@@ -1,9 +1,9 @@
 import { render, screen } from "@testing-library/react";
-import { useQuery } from "convex/react";
+import { useFirebaseQuery as useQuery } from "../../lib/firebase/hooks";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ProductReviewsSection } from "../ProductReviewsSection";
 
-vi.mock("convex/react", () => ({ useQuery: vi.fn() }));
+vi.mock("../../lib/firebase/hooks", () => ({ useFirebaseQuery: vi.fn() }));
 
 describe("ProductReviewsSection", () => {
   beforeEach(() => vi.mocked(useQuery).mockReset());

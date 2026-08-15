@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
-import { useMutation, useQuery } from "convex/react";
+import { useFirebaseMutation as useMutation } from "../../lib/firebase/mutations";
+import { useFirebaseQuery as useQuery } from "../../lib/firebase/hooks";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
@@ -7,9 +8,11 @@ import {
 } from "../../lib/brandPalette";
 import { BusinessSetup } from "../BusinessSetup";
 
-vi.mock("convex/react", () => ({
-  useMutation: vi.fn(),
-  useQuery: vi.fn(),
+vi.mock("../../lib/firebase/hooks", () => ({
+  useFirebaseQuery: vi.fn(),
+}));
+vi.mock("../../lib/firebase/mutations", () => ({
+  useFirebaseMutation: vi.fn(),
 }));
 
 vi.mock("sonner", () => ({

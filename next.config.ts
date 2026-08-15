@@ -34,12 +34,6 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: process.cwd(),
   },
-  // The imported legacy surface has pre-existing strict errors recorded in
-  // contracts/source-baseline.json. `npm run typecheck` remains an explicit
-  // red gate until Firebase repositories replace the Convex signatures.
-  typescript: {
-    ignoreBuildErrors: true,
-  },
 };
 
 export default nextConfig;
