@@ -1,6 +1,7 @@
 import {
   Authenticated,
   Unauthenticated,
+  EmailSignInForm,
   SignInButton,
   UserButton,
 } from "../lib/firebase/auth-ui";
@@ -71,6 +72,12 @@ export function SuperAdminPortal() {
                 Continue with Google
               </button>
             </SignInButton>
+            <div className="mt-6 flex items-center gap-3 text-xs font-medium uppercase tracking-[0.16em] text-slate-400">
+              <span className="h-px flex-1 bg-slate-200" />
+              <span>or</span>
+              <span className="h-px flex-1 bg-slate-200" />
+            </div>
+            <EmailSignInForm />
           </div>
         </div>
       </Unauthenticated>
