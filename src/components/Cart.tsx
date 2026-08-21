@@ -40,7 +40,7 @@ export function Cart() {
     return map;
   }, [products]);
 
-  // Load cart from saved cart (Convex)
+  // Load cart from the persisted Firebase-backed cart.
   const cart = useMemo(() => {
     if (!savedCart) return [];
     // Load from database only

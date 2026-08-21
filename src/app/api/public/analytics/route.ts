@@ -70,11 +70,13 @@ export async function POST(request: NextRequest) {
     }
 
     const timestamp = Date.now();
-    const attribution = {
-      utmCampaign: boundedString(body.utmCampaign, "utmCampaign", 256),
-      utmMedium: boundedString(body.utmMedium, "utmMedium", 256),
-      utmSource: boundedString(body.utmSource, "utmSource", 256),
-    };
+    const attribution = Object.fromEntries(
+      Object.entries({
+        utmCampaign: boundedString(body.utmCampaign, "utmCampaign", 256),
+        utmMedium: boundedString(body.utmMedium, "utmMedium", 256),
+        utmSource: boundedString(body.utmSource, "utmSource", 256),
+      }).filter(([, value]) => value !== undefined),
+    );
 
     if (type === "page_view") {
       await firestore.collection("pageViews").add({

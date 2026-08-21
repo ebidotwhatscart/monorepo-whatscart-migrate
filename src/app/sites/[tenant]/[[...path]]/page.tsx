@@ -3,15 +3,12 @@ import { notFound } from "next/navigation";
 
 import TenantClientEntry from "../../../tenant-client-entry";
 import {
-  getApprovedProductReviews,
   getFeaturedProducts,
-  getProductVariants,
   getPublicCatalog,
   getPublicBusinessBySlug,
   getPublicCategories,
   getPublicProduct,
   getPublicProducts,
-  getRelatedProducts,
 } from "@/lib/firebase/storefront";
 import { firebaseQueryKey } from "@/lib/firebase/query-key";
 import { tenantOrigin } from "@/lib/tenancy/host";
@@ -124,14 +121,7 @@ export default async function TenantPage({ params }: TenantPageProps) {
   }
 
   if (product && path[1]) {
-    const categoryId =
-      typeof product.categoryId === "string" ? product.categoryId : undefined;
-    const [related, variants, categories, reviews] = await Promise.all([
-      getRelatedProducts(business.id, product._id, categoryId, 8),
-      getProductVariants(business.id, product._id),
-      getPublicCategories(business.id),
-      getApprovedProductReviews(product._id, 20),
-    ]);
+    const categories = await getPublicCategories(business.id);
     initialQueries[
       firebaseQueryKey("products:getPublicProductBySlug", {
         slug: tenant,
@@ -139,30 +129,10 @@ export default async function TenantPage({ params }: TenantPageProps) {
       })
     ] = product;
     initialQueries[
-      firebaseQueryKey("products:getRelatedProducts", {
-        businessId: business._id,
-        categoryId,
-        excludeProductId: product._id,
-        limit: 8,
-      })
-    ] = related;
-    initialQueries[
-      firebaseQueryKey("products:getProductVariants", {
-        productId: product._id,
-        businessId: business._id,
-      })
-    ] = variants;
-    initialQueries[
       firebaseQueryKey("categories:getPublicCategories", {
         businessId: business._id,
       })
     ] = categories;
-    initialQueries[
-      firebaseQueryKey("reviews:getApprovedProductReviews", {
-        productId: product._id,
-        limit: 20,
-      })
-    ] = reviews;
   }
 
   const origin = tenantOrigin(tenant, rootDomain);

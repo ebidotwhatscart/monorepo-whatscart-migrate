@@ -29,6 +29,19 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
+  // Keep migration-era /store links, while sending the initial request through
+  // the server-rendered tenant route so catalog content is in the first HTML.
+  const legacyStoreMatch =
+    hostname === `app.${rootDomain}`
+      ? pathname.match(/^\/store\/([^/]+)(?:\/(.*))?$/)
+      : null;
+  if (legacyStoreMatch) {
+    const [, tenant, rest] = legacyStoreMatch;
+    const destination = request.nextUrl.clone();
+    destination.pathname = `/sites/${tenant}${rest ? `/${rest}` : ""}`;
+    return NextResponse.rewrite(destination);
+  }
+
   const tenant = tenantFromHostname(hostname, rootDomain);
   if (!tenant || pathname.startsWith("/sites/")) return NextResponse.next();
 

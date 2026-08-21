@@ -8,6 +8,7 @@ import storefrontWebSearchIconUrl from "../assets/figma/storefront-web-search-ic
 import backButtonUrl from "../assets/figma/back-button.svg";
 import { storefrontPath } from "../lib/urls";
 import { useRuntimeHostname } from "../context/RuntimeLocationContext";
+import { staticAssetUrl } from "../lib/staticAsset";
 
 interface PublicCategory {
   _id: string;
@@ -219,7 +220,7 @@ export function StorefrontHeader({
                 className="flex h-10 w-10 items-center justify-start rounded-full bg-white/70 backdrop-blur-md lg:hidden"
                 aria-label="Go back"
               >
-                <img src={backButtonUrl} alt="" className="w-[18px] h-[12px]" />
+                <img src={staticAssetUrl(backButtonUrl)} alt="" className="w-[18px] h-[12px]" />
               </Link>
             ) : (
               <button
@@ -229,7 +230,7 @@ export function StorefrontHeader({
                 aria-label="Open categories"
               >
                 <img
-                  src={headerMenuUrl}
+                  src={staticAssetUrl(headerMenuUrl)}
                   alt=""
                   className="h-[37px] w-20"
                   aria-hidden="true"
@@ -339,9 +340,10 @@ export function StorefrontHeader({
                   type="button"
                   onClick={() => setIsDesktopSearchOpen(true)}
                   className="flex h-12 w-[241px] items-center gap-3 rounded-2xl border border-[#ebe7e4] bg-[#f4f4f3] px-4 text-left text-base text-[#6b7280] transition hover:bg-[#efefed] lg:h-12 lg:rounded-2xl lg:border"
+                  style={{ color: "#5f6670" }}
                 >
                   <img
-                    src={storefrontWebSearchIconUrl}
+                    src={staticAssetUrl(storefrontWebSearchIconUrl)}
                     alt=""
                     className="h-[18px] w-[18px]"
                     aria-hidden="true"

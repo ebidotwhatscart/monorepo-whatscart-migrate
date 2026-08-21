@@ -6,17 +6,17 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
- * Extracts a clean, user-friendly error message from Convex/errors
+ * Extracts a clean, user-friendly error message from backend errors.
  * Removes technical noise like Request IDs, function names, etc.
  */
 export function getErrorMessage(error: unknown): string {
   // If error is already a string, return it as-is if it looks clean
   if (typeof error === "string") {
-    // If it looks like a raw Convex error, try to extract the message
+    // Preserve a clear message from a legacy raw backend error.
     if (error.includes("[CONVEX")) {
       const lines = error.split("\n");
       for (const line of lines) {
-        // Skip the Convex header line
+        // Skip the legacy backend header line.
         if (line.includes("[CONVEX") || line.includes("Request ID")) {
           continue;
         }
@@ -36,11 +36,11 @@ export function getErrorMessage(error: unknown): string {
   if (error instanceof Error) {
     const message = error.message;
 
-    // Handle Convex errors
+    // Handle legacy backend errors.
     if (message.includes("[CONVEX")) {
       const lines = message.split("\n");
       for (const line of lines) {
-        // Skip Convex technical lines
+        // Skip legacy backend technical lines.
         if (line.includes("[CONVEX") || line.includes("Request ID")) {
           continue;
         }

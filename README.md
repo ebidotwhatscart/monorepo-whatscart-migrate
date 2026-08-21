@@ -32,8 +32,12 @@ existing selector strings and asset hashes; the target currently matches all
 - Bubblewrap/manual Android Java source is preserved and retargeted to
   `app.whatscart.in`; the inherited Play application-ID/signing fingerprint
   conflict still requires owner confirmation.
-- No Vercel or Firebase project has yet been created in the currently logged-in
-  accounts, and no target deployment or production data import has run.
+- Firebase project `whatscart-in` and the Firebase Web app are configured.
+  Firestore rules and indexes are deployed. Vercel project `whatscart` is
+  linked and deployed at `https://whatscart-chi.vercel.app`.
+- Firebase Authentication, Admin credentials, and Storage are configured for
+  the test deployment; Firestore and Storage rules are deployed. Custom-domain
+  authorization and real-data migration remain the next production steps.
 
 Overall production readiness is currently estimated at **80%**. See
 [`docs/RESUME-HERE.md`](docs/RESUME-HERE.md) for the exact evidence, remaining
@@ -65,6 +69,17 @@ npm run vercel:production
 npm run cloudflare:check
 npm run cloudflare:deploy
 ```
+
+To test against a different apex domain before the production domain is ready,
+attach that domain to Vercel, point its DNS at Vercel, then run:
+
+```bash
+npm run deployment:domain -- example.com --deploy
+```
+
+This updates the preview and production `NEXT_PUBLIC_ROOT_DOMAIN` and
+`NEXT_PUBLIC_APP_URL` (`https://app.<root-domain>`) values and deploys a fresh
+production build. Re-run it with `whatscart.in` at cutover.
 
 Preview Firebase/Vercel must pass before production domains or the Cloudflare
 Worker are changed.

@@ -1,11 +1,11 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
-import ShareSheet from "./ShareSheet";
+import Image from "next/image";
+import dynamic from "next/dynamic";
 import { useFirebaseMutation as useMutation } from "../lib/firebase/mutations";
 import { useFirebaseQuery as useQuery } from "../lib/firebase/hooks";
 import { api, type Id } from "../lib/firebase/operations";
 import { useState, useRef, useEffect, useCallback, type ChangeEvent, type CSSProperties } from "react";
 import { useCart } from "../context/CartContext";
-import { CartSidebar } from "./CartSidebar";
 import {
   ShoppingCart,
   ChevronDown,
@@ -29,7 +29,6 @@ import { compressImage } from "../lib/imageCompression";
 import { StorefrontFooter } from "./StorefrontFooter";
 import { StorefrontHeader } from "./StorefrontHeader";
 import { StorefrontNotFound } from "./StorefrontNotFound";
-import { ProductReviewsSection } from "./ProductReviewsSection";
 import { getTenantSlug, productSlug, storefrontPath, storefrontUrl } from "../lib/urls";
 import { useRuntimeHostname } from "../context/RuntimeLocationContext";
 
@@ -53,6 +52,15 @@ import {
   formatCustomizationMessageLines,
 } from "../lib/productCustomization";
 
+// These surfaces are not needed to paint or operate the product hero. Loading
+// them only when they can be seen keeps their query clients and icon bundles
+// out of the critical mobile hydration path.
+const CartSidebar = dynamic(() => import("./CartSidebar").then((module) => module.CartSidebar));
+const ProductReviewsSection = dynamic(() =>
+  import("./ProductReviewsSection").then((module) => module.ProductReviewsSection),
+);
+const ShareSheet = dynamic(() => import("./ShareSheet"));
+
 export function ProductDetail() {
   const { slug: routeSlug, productId: productSlugParam } = useParams<{ slug: string; productId: string }>();
   const runtimeHostname = useRuntimeHostname();
@@ -64,7 +72,7 @@ export function ProductDetail() {
     slug && productSlugParam ? { slug, productSlug: productSlugParam } : "skip",
   );
   // Storefront URLs are opaque public references: the server resolves a
-  // canonical slug first, then safely falls back to a legacy Convex ID. Do
+  // canonical slug first, then safely falls back to a migrated legacy ID. Do
   // not infer an ID from URL formatting or cast an untrusted route value.
   const product = slugProduct;
   const relatedProducts = useQuery(
@@ -389,15 +397,17 @@ export function ProductDetail() {
         color: storefrontTheme.textPrimary,
       }}
     >
-      <CartSidebar
-        isOpen={isCartOpen}
-        onClose={() => setIsCartOpen(false)}
-        businessId={business._id}
-        businessSlug={business.slug}
-        businessName={business.name}
-        themeColor={storefrontTheme.ctaBackground}
-        whatsappPhone={business.whatsappPhone}
-      />
+      {isCartOpen && (
+        <CartSidebar
+          isOpen={isCartOpen}
+          onClose={() => setIsCartOpen(false)}
+          businessId={business._id}
+          businessSlug={business.slug}
+          businessName={business.name}
+          themeColor={storefrontTheme.ctaBackground}
+          whatsappPhone={business.whatsappPhone}
+        />
+      )}
 
       {/* Desktop header */}
       <div className="hidden lg:block">
@@ -452,11 +462,17 @@ export function ProductDetail() {
           <div className="lg:sticky lg:top-24 lg:self-start">
             {/* Mobile: card-style image */}
             <section className="relative mx-4 mt-4 overflow-hidden rounded-xl border border-[#3dac35]/5 bg-white shadow-sm lg:hidden">
-              <div className="aspect-square bg-slate-100">
+              <div className="aspect-square bg-slate-100" style={{ position: "relative" }}>
                 {images.length > 0 ? (
-                  <img
+                  <Image
                     src={images[currentIndex]!}
                     alt={product.name}
+                    fill
+                    sizes="50vw"
+                    quality={60}
+                    preload
+                    fetchPriority="high"
+                    decoding="async"
                     className="h-full w-full object-cover"
                     onTouchStart={handleTouchStart}
                     onTouchMove={handleTouchMove}
@@ -506,6 +522,7 @@ export function ProductDetail() {
                         src={url}
                         alt={`${product.name} mobile thumbnail ${idx + 1}`}
                         className="h-full w-full object-cover"
+                        loading="lazy"
                       />
                     </button>
                   ))}
@@ -574,10 +591,15 @@ export function ProductDetail() {
               <div className="w-full relative aspect-[4/5] md:aspect-square group bg-surface-container-low lg:rounded-xl">
                   {images.length > 0 ? (
                     <>
-                      <img
+                      <Image
                         ref={mainImageRef}
                         src={images[currentIndex]!}
                         alt={`${product.name} image ${currentIndex + 1}`}
+                        fill
+                        sizes="567px"
+                        quality={60}
+                        fetchPriority="high"
+                        decoding="async"
                         className="w-full h-full object-cover transition-all duration-700 lg:rounded-xl"
                         onTouchStart={handleTouchStart}
                         onTouchMove={handleTouchMove}
@@ -666,6 +688,7 @@ export function ProductDetail() {
                         src={url}
                         alt={`${product.name} thumbnail ${idx + 1}`}
                         className="h-16 w-16 object-cover"
+                        loading="lazy"
                       />
                     </button>
                   ))}
@@ -1157,15 +1180,17 @@ export function ProductDetail() {
         )}
       </footer>
 
-      <ShareSheet
-        isOpen={shareOpen}
-        onClose={() => setShareOpen(false)}
-        url={business && product ? storefrontUrl(business.slug, `products/${productSlug(product.name, product._id, product.slug)}`) : ""}
-        title={product?.name}
-        shareText={`Check out ${product?.name}`}
-        productId={product?._id}
-        businessId={business?._id}
-      />
+      {shareOpen && (
+        <ShareSheet
+          isOpen={shareOpen}
+          onClose={() => setShareOpen(false)}
+          url={business && product ? storefrontUrl(business.slug, `products/${productSlug(product.name, product._id, product.slug)}`) : ""}
+          title={product?.name}
+          shareText={`Check out ${product?.name}`}
+          productId={product?._id}
+          businessId={business?._id}
+        />
+      )}
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import Image from "next/image";
 import { useFirebaseQuery as useQuery } from "../lib/firebase/hooks";
 import {
   ArrowRight,
@@ -35,6 +36,7 @@ import whatscartPoweredLogoUrl from "../assets/figma/whatscart-powered-logo.svg"
 import whatsappLogoUrl from "../assets/figma/whatsapp-logo.svg";
 import { getTenantSlug, productSlug, storefrontPath } from "../lib/urls";
 import { useRuntimeHostname } from "../context/RuntimeLocationContext";
+import { staticAssetUrl } from "../lib/staticAsset";
 
 type PublicProduct = {
   _id: Id<"products">;
@@ -377,7 +379,7 @@ export function Storefront() {
             className="flex items-center gap-2"
           >
             <img
-              src={storefrontWebFilterUrl}
+              src={staticAssetUrl(storefrontWebFilterUrl)}
               alt=""
               className="h-3 w-[18px]"
               aria-hidden="true"
@@ -407,7 +409,7 @@ export function Storefront() {
           >
             Price: {sortDirection === "asc" ? "Low to High" : "High to Low"}
             <img
-              src={storefrontWebSortUrl}
+              src={staticAssetUrl(storefrontWebSortUrl)}
               alt=""
               className="h-1 w-[7px]"
               aria-hidden="true"
@@ -454,7 +456,7 @@ export function Storefront() {
             background: `linear-gradient(135deg, ${storefrontTheme.supportSoft} 0%, ${storefrontTheme.surface} 100%)`,
           }}
         >
-          <img src={whatsappLogoUrl} alt="" className="h-8 w-[33px]" />
+          <img src={staticAssetUrl(whatsappLogoUrl)} alt="" className="h-8 w-[33px]" />
           <h2
             className="mt-3 text-[18px] font-bold leading-7"
             style={{ color: storefrontTheme.textPrimary }}
@@ -497,13 +499,13 @@ export function Storefront() {
 
 function PoweredByWhatsCartPill() {
   return (
-    <a href="https://whatscart.in/" aria-label="Powered by WhatsCart" className="relative block h-14 w-[253px] overflow-hidden rounded-[10px] bg-black">
+    <a href="https://whatscart.in/" className="relative block h-14 w-[253px] overflow-hidden rounded-[10px] bg-black">
       <div className="absolute -left-1 -top-8 h-32 w-32 rounded-full bg-[#033500] blur-[31px]" />
       <div className="relative flex h-full items-center gap-3 px-5 text-base font-medium text-[#fafafa]">
         <span>Powered by</span>
         <span className="flex items-center gap-2">
           <img
-            src={whatscartPoweredLogoUrl}
+            src={staticAssetUrl(whatscartPoweredLogoUrl)}
             alt="Whatscart logo"
             className="h-7 w-[22px]"
           />
@@ -593,49 +595,34 @@ function FeaturedProductCarousel({
   businessSlug: string;
   storefrontTheme: StorefrontTheme;
 }) {
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const touchRef = useRef({ startX: 0, currentX: 0, isDragging: false });
+  const [isCarouselReady, setIsCarouselReady] = useState(false);
+
+  useEffect(() => {
+    const revealCarousel = () => setIsCarouselReady(true);
+    // Keep the hero lightweight until first paint, but expose its interaction
+    // as soon as the visitor signals intent. The timeout covers passive reads.
+    const timeout = window.setTimeout(revealCarousel, 1_000);
+    const events: (keyof WindowEventMap)[] = [
+      "pointerdown",
+      "touchstart",
+      "scroll",
+      "keydown",
+    ];
+    const options: AddEventListenerOptions = { passive: true };
+    events.forEach((event) => window.addEventListener(event, revealCarousel, options));
+
+    return () => {
+      window.clearTimeout(timeout);
+      events.forEach((event) =>
+        window.removeEventListener(event, revealCarousel, options),
+      );
+    };
+  }, []);
 
   const goNext = () => onSelect((activeIndex + 1) % products.length);
   const goPrev = () => onSelect((activeIndex - 1 + products.length) % products.length);
-
-  useEffect(() => {
-    if (products.length <= 1) return;
-
-    const startInterval = () => {
-      intervalRef.current = setInterval(goNext, 4000);
-    };
-
-    const handleMouseEnter = () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-    };
-
-    const handleMouseLeave = () => {
-      startInterval();
-    };
-
-    startInterval();
-
-    const container = containerRef.current;
-    if (container) {
-      container.addEventListener("mouseenter", handleMouseEnter);
-      container.addEventListener("mouseleave", handleMouseLeave);
-    }
-
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-      if (container) {
-        container.removeEventListener("mouseenter", handleMouseEnter);
-        container.removeEventListener("mouseleave", handleMouseLeave);
-      }
-    };
-  }, [products.length, activeIndex, onSelect]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     touchRef.current.startX = e.touches[0].clientX;
@@ -658,6 +645,7 @@ function FeaturedProductCarousel({
   };
 
   if (products.length === 0) return null;
+  const visibleProducts = isCarouselReady ? products : products.slice(0, 1);
 
   return (
     <div>
@@ -673,14 +661,17 @@ function FeaturedProductCarousel({
             className="flex transition-transform duration-300 ease-out"
             style={{ transform: `translateX(-${activeIndex * 100}%)` }}
           >
-            {products.map((product, index) => (
+            {visibleProducts.map((product, index) => (
               <div
                 key={product._id}
                 role="group"
                 aria-label={`Featured product ${index + 1} of ${products.length}`}
                 className="w-full shrink-0"
               >
-                <div aria-hidden={index !== activeIndex}>
+                <div
+                  aria-hidden={index !== activeIndex}
+                  inert={index !== activeIndex}
+                >
                   <FeaturedProductCard
                     product={product}
                     businessSlug={businessSlug}
@@ -693,7 +684,7 @@ function FeaturedProductCarousel({
           </div>
         </div>
 
-        {products.length > 1 && (
+        {isCarouselReady && products.length > 1 && (
           <>
             <button
               type="button"
@@ -715,11 +706,17 @@ function FeaturedProductCarousel({
         )}
       </div>
 
-      {products.length > 1 && (
-        <div
-          className="mt-4 flex items-center justify-between lg:justify-center lg:gap-2"
-          aria-label="Featured product slides"
-        >
+      <div
+        style={{
+          minHeight: products.length > 1 ? 52 : 0,
+          overflow: "hidden",
+        }}
+      >
+        {isCarouselReady && products.length > 1 && (
+          <div
+            className="mt-4 flex items-center justify-between lg:justify-center lg:gap-2"
+            aria-label="Featured product slides"
+          >
           <button
             type="button"
             onClick={goPrev}
@@ -736,7 +733,10 @@ function FeaturedProductCarousel({
                 onClick={() => onSelect(index)}
                 className="h-[13px] w-[13px] rounded-full transition"
                 style={{
-                  backgroundColor: (() => {
+                  width: 24,
+                  height: 24,
+                  backgroundColor: "transparent",
+                  boxShadow: `inset 0 0 0 5.5px ${(() => {
                     const accent = storefrontTheme.support;
                     if (isDark(accent)) {
                       return index === activeIndex ? accent : storefrontTheme.supportSoft;
@@ -746,7 +746,7 @@ function FeaturedProductCarousel({
                       return `rgb(${Math.round(((v>>16)&255)*f)}, ${Math.round(((v>>8)&255)*f)}, ${Math.round((v&255)*f)})`;
                     };
                     return dk(accent, index === activeIndex ? 0.38 : 0.55);
-                  })(),
+                  })()}`,
                 }}
                 aria-label={`Show featured product ${index + 1}`}
                 aria-current={index === activeIndex ? "true" : undefined}
@@ -761,8 +761,9 @@ function FeaturedProductCarousel({
           >
             <ChevronRight className="h-5 w-5 text-slate-700" />
           </button>
-        </div>
-      )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -815,12 +816,28 @@ function FeaturedProductCard({
         style={{ backgroundColor: storefrontTheme.surfaceStrong }}
       >
         {imageUrl ? (
-          <img
-            src={imageUrl}
-            alt=""
+          <span
+            aria-hidden="true"
             className="h-full w-full object-cover"
-            loading="eager"
-          />
+            style={{
+              position: "relative",
+              display: "block",
+              height: "100%",
+              width: "100%",
+            }}
+          >
+            {headingLevel === 1 && (
+              <Image
+                src={imageUrl}
+                alt=""
+                fill
+                sizes="(max-width: 1023px) 50vw, 567px"
+                quality={60}
+                preload
+                style={{ objectFit: "cover" }}
+              />
+            )}
+          </span>
         ) : (
           <div className="flex h-full w-full items-center justify-center text-[#777]">
             <Store className="h-12 w-12" aria-hidden="true" />
@@ -881,7 +898,6 @@ function FeaturedProductCard({
       <div className="hidden flex-col justify-center gap-6 lg:flex">
         <Link
           to={productPath}
-          aria-label={`View ${product.name} details`}
           className="flex flex-col items-start gap-6 rounded-xl transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D3435] focus-visible:ring-offset-4"
         >
           <span

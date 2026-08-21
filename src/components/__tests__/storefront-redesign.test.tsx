@@ -287,7 +287,7 @@ describe("Storefront redesign", () => {
     expect(within(footer).getByText("Powered by")).toBeInTheDocument();
     expect(within(footer).getByText("Whatscart")).toBeInTheDocument();
     expect(within(footer).getByRole("img", { name: /whatscart logo/i })).toBeInTheDocument();
-    expect(within(footer).getByRole("link", { name: "Powered by WhatsCart" })).toHaveAttribute(
+    expect(within(footer).getByRole("link", { name: /Powered by\s+Whatscart/ })).toHaveAttribute(
       "href",
       "https://whatscart.in/",
     );

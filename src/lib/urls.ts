@@ -11,9 +11,10 @@ export const appHostname = configuredHostname &&
   : `app.${publicRootDomain}`;
 export const adminHostname = `admin.${publicRootDomain}`;
 
-const supportsTenantSubdomains = ["whatscart.in", "lvh.me"].includes(
-  publicRootDomain,
-);
+// Any configured DNS domain supports tenant storefront hosts. Localhost uses
+// path-based storefront URLs because browsers cannot resolve arbitrary
+// subdomains beneath it without a dedicated local DNS setup.
+const supportsTenantSubdomains = publicRootDomain.includes(".");
 
 const TENANT_HOST_PATTERN = new RegExp(
   `^([a-z0-9](?:[a-z0-9-]*[a-z0-9])?)\\.${publicRootDomain.replaceAll(".", "\\.")}$`,
