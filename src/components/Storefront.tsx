@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import Image from "next/image";
 import { useFirebaseQuery as useQuery } from "../lib/firebase/hooks";
 import {
   ArrowRight,
@@ -831,15 +830,12 @@ function FeaturedProductCard({
             }}
           >
             {headingLevel === 1 && (
-              <Image
+              <img
                 src={imageUrl}
                 alt=""
-                fill
-                sizes="(max-width: 1023px) 50vw, 567px"
-                quality={60}
-                preload
                 fetchPriority="high"
-                style={{ objectFit: "cover" }}
+                decoding="async"
+                className="absolute inset-0 h-full w-full object-cover"
               />
             )}
           </span>

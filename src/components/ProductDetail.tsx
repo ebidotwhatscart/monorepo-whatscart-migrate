@@ -1,5 +1,4 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
-import Image from "next/image";
 import dynamic from "next/dynamic";
 import { useFirebaseMutation as useMutation } from "../lib/firebase/mutations";
 import { useFirebaseQuery as useQuery } from "../lib/firebase/hooks";
@@ -464,16 +463,12 @@ export function ProductDetail() {
             <section className="relative mx-4 mt-4 overflow-hidden rounded-xl border border-[#3dac35]/5 bg-white shadow-sm lg:hidden">
               <div className="aspect-square bg-slate-100" style={{ position: "relative" }}>
                 {images.length > 0 ? (
-                  <Image
+                  <img
                     src={images[currentIndex]!}
                     alt={product.name}
-                    fill
-                    sizes="50vw"
-                    quality={60}
-                    preload
                     fetchPriority="high"
                     decoding="async"
-                    className="h-full w-full object-cover"
+                    className="absolute inset-0 h-full w-full object-cover"
                     onTouchStart={handleTouchStart}
                     onTouchMove={handleTouchMove}
                     onTouchEnd={handleTouchEnd}
@@ -591,16 +586,13 @@ export function ProductDetail() {
               <div className="w-full relative aspect-[4/5] md:aspect-square group bg-surface-container-low lg:rounded-xl">
                   {images.length > 0 ? (
                     <>
-                      <Image
+                      <img
                         ref={mainImageRef}
                         src={images[currentIndex]!}
                         alt={`${product.name} image ${currentIndex + 1}`}
-                        fill
-                        sizes="567px"
-                        quality={60}
                         fetchPriority="high"
                         decoding="async"
-                        className="w-full h-full object-cover transition-all duration-700 lg:rounded-xl"
+                        className="absolute inset-0 h-full w-full object-cover transition-all duration-700 lg:rounded-xl"
                         onTouchStart={handleTouchStart}
                         onTouchMove={handleTouchMove}
                         onTouchEnd={handleTouchEnd}
