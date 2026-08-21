@@ -6,8 +6,19 @@ import path from "node:path";
 import process from "node:process";
 
 import {
+  applicationDefault,
+  cert,
+  getApp,
+  getApps,
+  initializeApp,
+} from "firebase-admin/app";
+import { getFirestore } from "firebase-admin/firestore";
+import { getStorage } from "firebase-admin/storage";
+
+import {
   APPLICATION_TABLES,
   loadConvexExport,
+  filterUnownedBusinesses,
   migrationManifest,
   transformConvexExport,
   validateConvexExport,
@@ -35,6 +46,32 @@ function printReport(label, value) {
 async function fileSha256(filePath) {
   const content = await readFile(filePath);
   return createHash("sha256").update(content).digest("hex");
+}
+
+function getFirebaseAdminClients(projectId, bucketName) {
+  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+  const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n");
+  const isEmulator = Boolean(
+    process.env.FIREBASE_AUTH_EMULATOR_HOST ||
+      process.env.FIRESTORE_EMULATOR_HOST ||
+      process.env.FIREBASE_STORAGE_EMULATOR_HOST,
+  );
+  const credential = clientEmail && privateKey
+    ? cert({ projectId, clientEmail, privateKey })
+    : isEmulator
+      ? undefined
+      : applicationDefault();
+  const app = getApps().length
+    ? getApp()
+    : initializeApp({
+        ...(credential ? { credential } : {}),
+        projectId,
+        storageBucket: bucketName,
+      });
+  return {
+    firestore: getFirestore(app),
+    storage: getStorage(app),
+  };
 }
 
 async function applyStorage(bucket, plan, overwriteExisting) {
@@ -168,7 +205,20 @@ async function verifyFirestore(firestore, tables) {
 async function main() {
   const options = parseArguments(process.argv.slice(2));
   const source = path.resolve(options.source);
-  const snapshot = await loadConvexExport(source);
+  const loadedSnapshot = await loadConvexExport(source);
+  const filtered = filterUnownedBusinesses(loadedSnapshot);
+  const snapshot = filtered.snapshot;
+  if (filtered.excludedBusinesses.length) {
+    printReport("excludedUnownedBusinesses", {
+      count: filtered.excludedBusinesses.length,
+      businesses: filtered.excludedBusinesses.map((business) => ({
+        id: business._id,
+        name: business.name ?? null,
+        ownerId: business.ownerId ?? null,
+      })),
+      storageObjects: filtered.excludedStorageCount,
+    });
+  }
   const validation = validateConvexExport(snapshot);
   printReport("validation", validation);
   if (validation.errors.length) {
@@ -199,14 +249,10 @@ async function main() {
   process.env.FIREBASE_PROJECT_ID =
     options.project ?? process.env.FIREBASE_PROJECT_ID;
   process.env.FIREBASE_STORAGE_BUCKET = bucketName;
-  const [{ getAdminFirestore, getAdminStorage }] = await Promise.all([
-    import("../../src/lib/firebase/admin.ts"),
-  ]);
-  const firestore = getAdminFirestore();
-  const storage = getAdminStorage();
-  if (!firestore || !storage) {
-    throw new Error("Firebase Admin credentials, project, and Storage bucket are required.");
-  }
+  const { firestore, storage } = getFirebaseAdminClients(
+    process.env.FIREBASE_PROJECT_ID,
+    bucketName,
+  );
   const storageResult = await applyStorage(
     storage.bucket(),
     transformed.storagePlan,

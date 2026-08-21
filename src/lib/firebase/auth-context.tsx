@@ -3,6 +3,7 @@
 import {
   GoogleAuthProvider,
   onIdTokenChanged,
+  signInWithEmailAndPassword,
   signInWithPopup,
   signOut as firebaseSignOut,
   type User,
@@ -24,6 +25,7 @@ type FirebaseAuthContextValue = {
   isSignedIn: boolean;
   user: User | null;
   signIn: () => Promise<void>;
+  signInWithEmail: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -93,6 +95,12 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
     await signInWithPopup(client.auth, new GoogleAuthProvider());
   }, []);
 
+  const signInWithEmail = useCallback(async (email: string, password: string) => {
+    const client = getFirebaseClient();
+    if (!client) throw new Error("Firebase client configuration is missing.");
+    await signInWithEmailAndPassword(client.auth, email.trim(), password);
+  }, []);
+
   const signOut = useCallback(async () => {
     const client = getFirebaseClient();
     if (!client) return;
@@ -106,9 +114,10 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
       isSignedIn: Boolean(user),
       user,
       signIn,
+      signInWithEmail,
       signOut,
     }),
-    [isLoaded, signIn, signOut, user],
+    [isLoaded, signIn, signInWithEmail, signOut, user],
   );
 
   return (

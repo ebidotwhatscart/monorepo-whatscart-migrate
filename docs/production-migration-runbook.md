@@ -20,6 +20,10 @@ validated.
 - Each Firestore document receives an `_migration` source ID and checksum.
   Repeating the same import is a no-op. Changed or unrelated target documents
   stop the run unless `--overwrite-existing` is explicitly supplied.
+- Businesses whose `ownerId` is absent from the exported `users` table are
+  intentionally excluded, along with their products, categories, catalogs,
+  carts, orders, reviews, analytics, and referenced Storage objects. The dry
+  run prints the excluded business IDs and names.
 
 ## Existing-user ownership claim
 

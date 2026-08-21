@@ -1,5 +1,5 @@
 import { createHash, createHmac } from "node:crypto";
-import { existsSync } from "node:fs";
+import { existsSync, readdirSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 
@@ -49,6 +49,102 @@ export async function loadConvexExport(exportDirectory) {
     path.join(exportDirectory, "_storage", "documents.jsonl"),
   );
   return { exportDirectory, storage, tables };
+}
+
+const BUSINESS_TABLES = [
+  "categories",
+  "products",
+  "businessVariationOptions",
+  "catalogs",
+  "carts",
+  "orders",
+  "reviewRequests",
+  "productReviewStats",
+  "pageViews",
+  "productViews",
+  "productShares",
+];
+
+function referencedStorageIds(tables) {
+  const ids = new Set();
+  const add = (id) => {
+    if (typeof id === "string" && id) ids.add(id);
+  };
+  for (const business of tables.businesses) {
+    add(business.logoId);
+    add(business.fssaiDocId);
+  }
+  for (const product of tables.products) {
+    for (const id of product.imageIds ?? []) add(id);
+    add(product.sizeGuideImageId);
+  }
+  for (const request of tables.reviewRequests) {
+    for (const product of request.products ?? []) add(product.imageId);
+  }
+  for (const upload of tables.reviewUploads) add(upload.storageId);
+  for (const review of tables.productReviews) {
+    for (const id of review.imageIds ?? []) add(id);
+  }
+  return ids;
+}
+
+/**
+ * Removes businesses whose owner record was deleted from Convex, together
+ * with all application data that belongs to those businesses. Orphaned
+ * analytics for already-deleted products are also omitted because they cannot
+ * be represented safely in the target schema.
+ */
+export function filterUnownedBusinesses(snapshot) {
+  const userIds = new Set(snapshot.tables.users.map((user) => user._id));
+  const excludedBusinesses = snapshot.tables.businesses.filter(
+    (business) => !userIds.has(business.ownerId),
+  );
+  const excludedBusinessIds = new Set(excludedBusinesses.map((business) => business._id));
+  const keptBusinessIds = new Set(
+    snapshot.tables.businesses
+      .filter((business) => !excludedBusinessIds.has(business._id))
+      .map((business) => business._id),
+  );
+  const businessIdOf = (document) => keptBusinessIds.has(document.businessId);
+
+  const tables = Object.fromEntries(
+    Object.entries(snapshot.tables).map(([table, documents]) => [table, [...documents]]),
+  );
+  tables.businesses = tables.businesses.filter((business) =>
+    keptBusinessIds.has(business._id),
+  );
+  for (const table of BUSINESS_TABLES) {
+    tables[table] = tables[table].filter(businessIdOf);
+  }
+
+  const keptProductIds = new Set(tables.products.map((product) => product._id));
+  tables.productViews = tables.productViews.filter((view) =>
+    keptProductIds.has(view.productId),
+  );
+  tables.productShares = tables.productShares.filter((view) =>
+    keptProductIds.has(view.productId),
+  );
+  tables.reviewUploads = tables.reviewUploads.filter((upload) =>
+    tables.reviewRequests.some((request) => request._id === upload.reviewRequestId),
+  );
+  tables.productReviews = tables.productReviews.filter((review) =>
+    keptProductIds.has(review.productId),
+  );
+  tables.productReviewStats = tables.productReviewStats.filter((stats) =>
+    keptProductIds.has(stats.productId),
+  );
+
+  const storageIds = referencedStorageIds(tables);
+  const filteredStorage = snapshot.storage.filter((metadata) =>
+    storageIds.has(metadata._id),
+  );
+
+  return {
+    snapshot: { ...snapshot, tables, storage: filteredStorage },
+    excludedBusinesses,
+    excludedBusinessIds,
+    excludedStorageCount: snapshot.storage.length - filteredStorage.length,
+  };
 }
 
 function tableIndex(tables, table) {
@@ -177,7 +273,7 @@ export function validateConvexExport(snapshot) {
   }
 
   for (const metadata of storage) {
-    const sourceFile = path.join(exportDirectory, "_storage", metadata._id);
+    const sourceFile = storageSourceFile(exportDirectory, metadata);
     if (!existsSync(sourceFile)) {
       errors.push(`missing exported storage object ${metadata._id}`);
     }
@@ -195,6 +291,18 @@ export function validateConvexExport(snapshot) {
     errors,
     warnings,
   };
+}
+
+function storageSourceFile(exportDirectory, metadata) {
+  const storageDirectory = path.join(exportDirectory, "_storage");
+  const exact = path.join(storageDirectory, metadata._id);
+  if (existsSync(exact)) return exact;
+  const matchingName = readdirSync(storageDirectory).find(
+    (name) => name.startsWith(`${metadata._id}.`),
+  );
+  return matchingName
+    ? path.join(storageDirectory, matchingName)
+    : exact;
 }
 
 function canonicalValue(value) {
@@ -291,11 +399,7 @@ function storagePlan(snapshot, bucket, tokenSecret) {
           contentType: metadata.contentType ?? "application/octet-stream",
           objectPath,
           sourceChecksum: metadata.sha256 ?? metadata.storageId ?? null,
-          sourceFile: path.join(
-            snapshot.exportDirectory,
-            "_storage",
-            metadata._id,
-          ),
+          sourceFile: storageSourceFile(snapshot.exportDirectory, metadata),
           token,
           url: storageUrl(bucket, objectPath, token),
           visibility: owner?.visibility ?? "private",

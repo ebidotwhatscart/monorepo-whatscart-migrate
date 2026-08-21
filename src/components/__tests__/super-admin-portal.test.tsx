@@ -25,6 +25,7 @@ vi.mock("../../lib/firebase/auth-ui", () => ({
   Authenticated: ({ children }: { children: ReactNode }) => children,
   Unauthenticated: () => null,
   SignInButton: ({ children }: { children: ReactNode }) => children,
+  EmailSignInForm: () => null,
   UserButton: () => null,
 }));
 vi.mock("../../lib/firebase/hooks", () => ({
