@@ -1,0 +1,9 @@
+# Whatscart
+
+Whatscart provides online storefronts and order management for businesses.
+
+## Links
+
+- [Website](https://whatscart.in/)
+- [Business storefronts](https://app.whatscart.in/store/)
+- [Admin dashboard](https://app.whatscart.in/dashboard)

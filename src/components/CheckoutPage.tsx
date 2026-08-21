@@ -352,7 +352,7 @@ export function CheckoutPage() {
             : undefined,
       });
 
-      // Save cart to Convex so the cart link is functional
+      // Save the Firebase-backed cart so the cart link remains functional.
       const cartId = result.orderId;
       await saveCart({
         businessId: business._id,

@@ -67,7 +67,7 @@ export function createStorefrontTheme({
     surfaceMuted: mix(neutral, primary, 0.06),
     border: mix(neutral, DARK, 0.12),
     textPrimary: bodyText,
-    textSecondary: mix(bodyText, WHITE, 0.42),
+    textSecondary: mix(bodyText, WHITE, 0.3),
     accent: primary,
     accentStrong: primary,
     accentSoft: mix(neutral, primary, 0.16),

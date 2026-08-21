@@ -6,7 +6,8 @@ Untouched source: `/home/positron/Documents/Projects/whatsCartNew`
 
 ## Latest status check
 
-Checked immediately before handoff:
+Checked immediately before the original handoff; see the deployment update
+below for newer external state.
 
 - `rtk npm run typecheck`: pass, zero errors.
 - `rtk npm run build`: pass with Next.js TypeScript validation enabled.
@@ -43,7 +44,7 @@ Android app-identity conflict.
 | Tenant SEO and fresh-deployment/cache behavior | 95% | SSR metadata, JSON-LD, robots, sitemap, live listeners, SW updates, and Cloudflare gateway implemented; production headers still need live validation. |
 | Production data/Storage migration | 45% | Idempotent validated importer and account claim exist; real export/rehearsal/cutover have not run. |
 | Tests, types, fidelity gates | 90% | Strict types/build, 29 emulator tests, and 2,491 selectors pass. The same inherited 22 source-baseline tests still fail. |
-| Vercel/Cloudflare/DNS release | 15% | CLI/config are ready; no Vercel project, domains, DNS switch, or Worker deploy yet. |
+| Vercel/Cloudflare/DNS release | 45% | Vercel project is linked and deployed; domains, DNS switch, and Worker deploy remain. |
 | PWA/Bubblewrap/TWA | 65% | Android source/manual Java copied and host retargeted; release identity must be confirmed before build/publish. |
 
 This percentage is a production-readiness estimate, not a time estimate.
@@ -160,27 +161,37 @@ All of these results are from this checkpoint:
 - Expected `PERMISSION_DENIED` emulator logs are intentional negative
   authorization assertions.
 
+## Deployment update (2026-08-20, Asia/Kolkata)
+
+- Firebase project `whatscart-in` and Web app
+  `1:268769378922:web:301549216e820e90f28013` were created.
+- Firestore was initialized; `firestore.rules` and `firestore.indexes.json`
+  are deployed and current.
+- Vercel project `whatscart` is linked in team `whatscart1` and has a ready
+  production deployment at `https://whatscart-chi.vercel.app`.
+- Firebase Storage is initialized and `storage.rules` is deployed. Firebase
+  Authentication and Firebase Admin credentials are configured for the test
+  deployment. No production data import has run.
+- Production-domain authorization and DNS cutover remain outstanding.
+
 ## External state discovered
 
-- Vercel CLI 59.1.3 is authenticated as `team-1917` in the `whatscart` scope.
-- That Vercel scope currently contains **zero projects**. The target is not
-  linked and has never been deployed.
-- Firebase CLI 15.4.0 is authenticated, but `projects:list` returned **zero
-  Firebase projects**.
-- Do not invent a permanent Firebase project ID or production Vercel project
-  name without owner confirmation.
+- Vercel CLI is authenticated to team `whatscart1`, which contains the linked
+  `whatscart` project.
+- Firebase CLI is authenticated to the `whatscart-in` project.
 
 ## Remaining launch work
 
-1. Owner chooses the permanent Firebase project ID and confirms the Vercel
-   project name (recommended: `whatscart`). Create/configure Auth, Firestore,
-   Storage, OAuth authorized domains, billing/quotas, and service credentials.
-2. Deploy Firebase rules/indexes/Storage rules to a non-production project.
+1. Validate Firebase Authentication, Storage uploads, and Admin session flows
+   on the test domain. Configure production OAuth authorized domains and
+   billing/quotas before cutover.
+2. Configure a non-production Firebase project if a rehearsal environment is
+   required; Firestore rules/indexes are already deployed to `whatscart-in`.
 3. Export Convex production with file storage to a private location; run the
    dry-run importer, seed preview Firebase, and validate counts/checksums and
    sample business/order/review/analytics behavior.
-4. Create/link the Vercel project, configure preview environment variables, and
-   deploy with Vercel CLI.
+4. Configure Firebase Admin credentials and any missing preview environment
+   variables, then validate the existing Vercel deployment.
 5. Validate server HTML, metadata, canonical URLs, sitemap/robots, auth cookies,
    uploads, commerce, owner claim, super-admin, and live updates on preview.
 6. Attach apex, `app`, `admin`, and wildcard domains. Update Cloudflare DNS to

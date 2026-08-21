@@ -1,5 +1,10 @@
 # WhatsCart migration audit
 
+> Historical source-baseline audit. It describes the untouched
+> `../whatsCartNew` application at the time the migration began; it is not a
+> description of the current target runtime. For current status and the
+> remaining production cutover, see [RESUME-HERE.md](RESUME-HERE.md).
+
 ## Source of truth
 
 The current production source is the clean `main` branch in
@@ -7,14 +12,12 @@ The current production source is the clean `main` branch in
 of that repository; it does not contain the replacement tech stack referenced
 in the request.
 
-The target web runtime is now Next.js 16 on Vercel, operated through Vercel
-CLI. Firebase is the target data, authentication, storage, rules, and emulator
-platform. Clerk and Convex remain only inside the transition shell while their
-83 backend exports and 114 frontend call sites are migrated. The existing
-Cloudflare wildcard proxy remains necessary for tenant hosts until the Vercel
-domain configuration is validated in staging.
+The target web runtime is Next.js 16 on Vercel, operated through Vercel CLI.
+Firebase is the target data, authentication, storage, rules, and emulator
+platform. The Clerk/Convex transition work recorded below is complete in the
+target; the source repository remains untouched for rollback and export.
 
-## Existing topology
+## Source topology at audit time
 
 | Origin | Responsibility | Current implementation |
 |---|---|---|
@@ -39,7 +42,7 @@ resolved before a TWA release can be considered verified. The tracked Java
 customization is an Android Oreo-safe portrait-orientation override; the
 Application and DelegationService subclasses are otherwise empty.
 
-## Application surface
+## Source application surface
 
 The frontend is React 19, React Router 7, Tailwind 3, Clerk, and Convex. One
 bundle contains:
@@ -69,7 +72,7 @@ initializer, including dynamic expressions, plus all static class tokens and
 IDs. It also hashes the assets and platform files. Migration work must not
 silently normalize, rename, or replace these selectors.
 
-## Baseline health
+## Source baseline health
 
 - Production Vite build: passes.
 - Existing Vitest suite: 90 passing, 22 failing across 7 files.
@@ -142,9 +145,9 @@ silently normalize, rename, or replace these selectors.
   and deletion of another super-admin.
 - The exact UI contract passes after the scaffold and auth groundwork: all
   2,491 captured selectors and all hashed source assets match.
-- `next build` currently skips the inherited TypeScript errors. The explicit
-  typecheck remains a migration gate and the exception must be removed with the
-  Convex bridge.
+- Next.js production compilation and strict TypeScript validation are enabled;
+  the inherited source-baseline test failures are tracked separately from the
+  target migration gates in `RESUME-HERE.md`.
 
 ## Cache and update contract
 
@@ -198,4 +201,4 @@ gate before DNS changes.
 The durable status, exact stopping point, remaining transition imports,
 verification evidence, risks, and ordered production plan are in
 [`RESUME-HERE.md`](RESUME-HERE.md). The conservative overall completion
-estimate at that checkpoint is 65%.
+estimate at that checkpoint is 80%.

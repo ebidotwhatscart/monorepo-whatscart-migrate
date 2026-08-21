@@ -28,9 +28,21 @@ const nextConfig: NextConfig = {
   },
   images: {
     disableStaticImages: true,
+    qualities: [60, 75],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "firebasestorage.googleapis.com",
+        pathname: "/v0/b/**",
+      },
+    ],
   },
   poweredByHeader: false,
   reactStrictMode: true,
+  // Next.js externally loads firebase-admin by default. Its current jwks-rsa
+  // dependency requires an ESM-only jose build, so bundle the Admin SDK into
+  // Route Handlers instead of using Node's runtime require.
+  transpilePackages: ["firebase-admin"],
   turbopack: {
     root: process.cwd(),
   },
