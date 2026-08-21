@@ -736,21 +736,25 @@ function FeaturedProductCarousel({
                   width: 24,
                   height: 24,
                   backgroundColor: "transparent",
-                  boxShadow: `inset 0 0 0 5.5px ${(() => {
-                    const accent = storefrontTheme.support;
-                    if (isDark(accent)) {
-                      return index === activeIndex ? accent : storefrontTheme.supportSoft;
-                    }
-                    const dk = (h: string, f: number) => {
-                      const v = parseInt(h.replace("#", ""), 16);
-                      return `rgb(${Math.round(((v>>16)&255)*f)}, ${Math.round(((v>>8)&255)*f)}, ${Math.round((v&255)*f)})`;
-                    };
-                    return dk(accent, index === activeIndex ? 0.38 : 0.55);
-                  })()}`,
                 }}
                 aria-label={`Show featured product ${index + 1}`}
                 aria-current={index === activeIndex ? "true" : undefined}
-              />
+              >
+                <span
+                  aria-hidden="true"
+                  style={{
+                    display: "block",
+                    width: 8,
+                    height: 8,
+                    borderRadius: "9999px",
+                    transition: "background-color 150ms ease",
+                    backgroundColor:
+                      index === activeIndex
+                        ? storefrontTheme.support
+                        : storefrontTheme.supportSoft,
+                  }}
+                />
+              </button>
             ))}
           </div>
           <button
@@ -834,6 +838,7 @@ function FeaturedProductCard({
                 sizes="(max-width: 1023px) 50vw, 567px"
                 quality={60}
                 preload
+                fetchPriority="high"
                 style={{ objectFit: "cover" }}
               />
             )}
