@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { ShoppingCart, X } from "lucide-react";
 import type { StorefrontTheme } from "../lib/storefrontTheme";
-import headerCartUrl from "../assets/figma/storefront-header-cart.svg";
 import headerMenuUrl from "../assets/figma/storefront-header-menu.svg";
 import storefrontWebSearchIconUrl from "../assets/figma/storefront-web-search-icon.svg";
 import backButtonUrl from "../assets/figma/back-button.svg";
