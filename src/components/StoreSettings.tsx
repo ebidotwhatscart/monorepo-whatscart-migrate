@@ -1339,7 +1339,7 @@ export function StoreSettings({ business, showHeader = true }: StoreSettingsProp
           </div>
           <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
             <p className="text-xs text-gray-500 mb-3">
-              Select and reorder products for the hero carousel on your storefront.
+              Select and reorder up to 5 products for the hero carousel on your storefront. If none are selected, the first 5 products are shown by default.
             </p>
             {!allProducts ? (
               <p className="text-sm text-gray-400 py-4 text-center">Loading products...</p>
@@ -1369,6 +1369,10 @@ export function StoreSettings({ business, showHeader = true }: StoreSettingsProp
                               prev.filter((id) => id !== product._id),
                             );
                           } else {
+                            if (featuredProductIds.length >= 5) {
+                              toast.error("You can select up to 5 featured products.");
+                              return;
+                            }
                             setFeaturedProductIds((prev) => [...prev, product._id as Id<"products">]);
                           }
                           triggerAutoSave();
