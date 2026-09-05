@@ -197,12 +197,13 @@ export function Storefront() {
   );
   const featuredProducts = useMemo(() => {
     if (featuredProductsFromQuery && featuredProductsFromQuery.length > 0) {
-      return featuredProductsFromQuery;
+      return featuredProductsFromQuery.slice(0, 5);
     }
     const inStockProducts = (products ?? []).filter(
       (product) => product.inStock,
     );
-    return inStockProducts.length > 0 ? inStockProducts : (products ?? []);
+    const candidateList = inStockProducts.length > 0 ? inStockProducts : (products ?? []);
+    return candidateList.slice(0, 5);
   }, [featuredProductsFromQuery, products]);
   const isLoading =
     business === undefined ||
