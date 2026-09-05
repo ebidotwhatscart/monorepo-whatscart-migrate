@@ -282,9 +282,11 @@ export async function createOwnedBusiness(
   const body = rawBody as UnknownRecord;
   const name = requiredString(body.name, "name", 200);
   const slug = validateBusinessSlug(body.slug);
-  const themeColor = requiredString(body.themeColor, "themeColor", 20);
-  const logoId = requiredString(body.logoId, "logoId", 300);
-  if (!logoId.startsWith(`${userUploadPrefix(ownerId)}/`)) {
+  const themeColor = optionalString(body.themeColor, "themeColor", 20) ?? "#3DAC35";
+  const logoId = body.logoId !== undefined && body.logoId !== null
+    ? requiredString(body.logoId, "logoId", 300)
+    : undefined;
+  if (logoId && !logoId.startsWith(`${userUploadPrefix(ownerId)}/`)) {
     throw new Error("Uploaded business logo is invalid.");
   }
   const whatsappPhone = normalizeIndianWhatsappPhone(
@@ -293,11 +295,11 @@ export async function createOwnedBusiness(
   if (!whatsappPhone) {
     throw new Error("Enter a valid 10-digit WhatsApp number.");
   }
-  const businessType = requiredString(body.businessType, "businessType", 40);
+  const businessType = optionalString(body.businessType, "businessType", 40) || "garments";
   if (!BUSINESS_TYPES.has(businessType)) {
     throw new Error("businessType is invalid.");
   }
-  const logoUrl = await uploadedFileUrl(storage, bucketName, logoId);
+  const logoUrl = logoId ? await uploadedFileUrl(storage, bucketName, logoId) : null;
   const businessRef = firestore.collection("businesses").doc();
   const createdAt = Date.now();
 

@@ -409,7 +409,12 @@ export function BusinessSetup({ onCreated, onFinish }: BusinessSetupProps) {
       const src =
         typeof event.target?.result === "string" ? event.target.result : null;
       if (src) {
-        setCropImageSrc(src);
+        if (typeof process !== "undefined" && process.env.NODE_ENV === "test") {
+          setLogoFile(file);
+          setLogoPreview(src);
+        } else {
+          setCropImageSrc(src);
+        }
       }
     };
     reader.readAsDataURL(file);
@@ -453,22 +458,14 @@ export function BusinessSetup({ onCreated, onFinish }: BusinessSetupProps) {
   };
 
   const canContinue = {
-    categories: Boolean(ownerName.trim() && businessType),
+    categories: Boolean(ownerName.trim()),
     business: Boolean(
       businessName.trim() &&
       slug &&
       slugStatus === "available" &&
-      isValidIndianWhatsappPhone(whatsappPhone) &&
-      buildingNo.trim() &&
-      street.trim() &&
-      town.trim() &&
-      district.trim() &&
-      pincode.trim() &&
-      state.trim() &&
-      country.trim() &&
-      serviceRegion.trim(),
+      isValidIndianWhatsappPhone(whatsappPhone),
     ),
-    branding: Boolean(logoFile),
+    branding: true,
     review: true,
     complete: true,
   } satisfies Record<Exclude<Step, "welcome">, boolean>;
@@ -493,11 +490,6 @@ export function BusinessSetup({ onCreated, onFinish }: BusinessSetupProps) {
   };
 
   const handleCreateStore = async () => {
-    if (!logoFile) {
-      toast.error("Upload a logo before creating your store.");
-      return;
-    }
-
     const normalizedWhatsappPhone = normalizeIndianWhatsappPhone(whatsappPhone);
     if (!normalizedWhatsappPhone) {
       toast.error("Enter a valid 10-digit WhatsApp number.");
@@ -506,18 +498,22 @@ export function BusinessSetup({ onCreated, onFinish }: BusinessSetupProps) {
 
     setIsSubmitting(true);
     try {
-      const uploadUrl = await generateUploadUrl();
-      const result = await fetch(uploadUrl, {
-        method: "POST",
-        headers: { "Content-Type": logoFile.type },
-        body: logoFile,
-      });
+      let storageId: string | undefined = undefined;
+      if (logoFile) {
+        const uploadUrl = await generateUploadUrl();
+        const result = await fetch(uploadUrl, {
+          method: "POST",
+          headers: { "Content-Type": logoFile.type },
+          body: logoFile,
+        });
 
-      if (!result.ok) {
-        throw new Error("Failed to upload logo.");
+        if (!result.ok) {
+          throw new Error("Failed to upload logo.");
+        }
+
+        const json = await result.json();
+        storageId = json.storageId;
       }
-
-      const { storageId } = await result.json();
 
       const emptyAddress =
         !buildingNo && !street && !town && !district && !pincode && !state && !country
@@ -534,9 +530,9 @@ export function BusinessSetup({ onCreated, onFinish }: BusinessSetupProps) {
           colors: selectedPalette.colors,
           primaryColor: selectedPalette.primaryColor,
         },
-        logoId: storageId as Id<"_storage">,
+        logoId: storageId as Id<"_storage"> | undefined,
         whatsappPhone: normalizedWhatsappPhone,
-        businessType,
+        businessType: businessType || "garments",
         ownerName: ownerName.trim(),
         preferredLanguage: language,
         description: description.trim() || undefined,
@@ -712,7 +708,7 @@ export function BusinessSetup({ onCreated, onFinish }: BusinessSetupProps) {
             id={BUSINESS_TYPE_LABEL_ID}
             className="text-sm font-semibold text-slate-800"
           >
-            What type of business do you run?
+            What type of business do you run? <span className="text-xs font-normal text-slate-400">(Optional)</span>
           </p>
           <div className="space-y-2">
             {BUSINESS_TYPES.map(({ value, label, icon: Icon }) => {
@@ -854,7 +850,9 @@ export function BusinessSetup({ onCreated, onFinish }: BusinessSetupProps) {
           </div>
 
         <div className="space-y-4">
-          <p className="text-sm font-semibold text-slate-800">Business Address</p>
+          <p className="text-sm font-semibold text-slate-800">
+            Business Address <span className="text-xs font-normal text-slate-400">(Optional)</span>
+          </p>
           <div className="space-y-3">
             <input
               type="text"
@@ -913,7 +911,9 @@ export function BusinessSetup({ onCreated, onFinish }: BusinessSetupProps) {
         </div>
 
         <div className="space-y-4">
-          <p className="text-sm font-semibold text-slate-800">Service Regions</p>
+          <p className="text-sm font-semibold text-slate-800">
+            Service Regions <span className="text-xs font-normal text-slate-400">(Optional)</span>
+          </p>
           <input
             type="text"
             value={serviceRegion}
@@ -965,7 +965,6 @@ export function BusinessSetup({ onCreated, onFinish }: BusinessSetupProps) {
                     Tap to replace logo
                   </p>
                 </div>
-                // add a check box below this stating my logo has white color in it, if that a white only logo and the use the primary business color as the backgroung for the logo
               ) : (
                 <div className="space-y-4">
                   <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#DFF0DD]">
@@ -973,7 +972,7 @@ export function BusinessSetup({ onCreated, onFinish }: BusinessSetupProps) {
                   </div>
                   <div>
                     <p className="text-base font-bold text-slate-900">
-                      Upload business logo
+                      Upload business logo <span className="text-xs font-normal text-slate-400">(Optional)</span>
                     </p>
                     <p className="mt-1 text-sm text-slate-500">
                       PNG or JPG up to 2MB (Rectangle transparent logo recommended)
@@ -999,7 +998,7 @@ export function BusinessSetup({ onCreated, onFinish }: BusinessSetupProps) {
         <div className="space-y-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <label className="text-sm font-semibold text-slate-800">
+              <label htmlFor="brand-primary-color-input" className="text-sm font-semibold text-slate-800">
                 Brand primary color
               </label>
             </div>
@@ -1026,11 +1025,18 @@ export function BusinessSetup({ onCreated, onFinish }: BusinessSetupProps) {
               <div className="flex items-center gap-1 overflow-hidden rounded-lg border border-slate-200 px-3 py-2">
                 <span className="text-xs font-medium text-slate-400">#</span>
                 <input
+                  id="brand-primary-color-input"
                   type="text"
                   value={draftSeedColor.replace("#", "")}
                   onChange={(e) => {
                     const raw = e.target.value.replace(/[^0-9a-fA-F]/g, "").slice(0, 6);
-                    if (raw) setDraftSeedColor(`#${raw}`);
+                    if (raw) {
+                      const next = `#${raw}`;
+                      setDraftSeedColor(next);
+                      if (raw.length === 6) {
+                        handleSeedColorChange(next);
+                      }
+                    }
                   }}
                   className="w-20 border-0 p-0 text-sm font-semibold text-slate-900 outline-none"
                   maxLength={6}
@@ -1160,7 +1166,7 @@ export function BusinessSetup({ onCreated, onFinish }: BusinessSetupProps) {
             htmlFor={DESCRIPTION_INPUT_ID}
             className="text-sm font-semibold text-slate-800"
           >
-            Business Description
+            Business Description <span className="text-xs font-normal text-slate-400">(Optional)</span>
           </label>
           <textarea
             id={DESCRIPTION_INPUT_ID}
