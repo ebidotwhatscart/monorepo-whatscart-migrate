@@ -24,6 +24,9 @@ service firebase.storage {
       return !('isEnabled' in business) || business.isEnabled == true;
     }
 
+    // Public storefront assets live only under this prefix. The migration also
+    // applies per-object Cloud Storage public-read access so CDN URLs do not
+    // require Firebase download tokens. Writes remain owner/admin-only.
     match /businesses/{businessId}/public/{allPaths=**} {
       allow read: if businessIsPublic(businessId)
         || ownsBusiness(businessId)
@@ -38,4 +41,3 @@ service firebase.storage {
     }
   }
 }
-

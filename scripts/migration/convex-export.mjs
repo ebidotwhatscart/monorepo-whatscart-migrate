@@ -331,7 +331,13 @@ function downloadToken(secret, storageId) {
   return `${digest.slice(0, 8)}-${digest.slice(8, 12)}-${digest.slice(12, 16)}-${digest.slice(16, 20)}-${digest.slice(20, 32)}`;
 }
 
-function storageUrl(bucket, objectPath, token) {
+function storageUrl(bucket, objectPath, token, visibility = "private") {
+  if (visibility === "public") {
+    return `https://storage.googleapis.com/${encodeURIComponent(bucket)}/${objectPath
+      .split("/")
+      .map((segment) => encodeURIComponent(segment))
+      .join("/")}`;
+  }
   return `https://firebasestorage.googleapis.com/v0/b/${encodeURIComponent(bucket)}/o/${encodeURIComponent(objectPath)}?alt=media&token=${encodeURIComponent(token)}`;
 }
 
@@ -401,7 +407,7 @@ function storagePlan(snapshot, bucket, tokenSecret) {
           sourceChecksum: metadata.sha256 ?? metadata.storageId ?? null,
           sourceFile: storageSourceFile(snapshot.exportDirectory, metadata),
           token,
-          url: storageUrl(bucket, objectPath, token),
+          url: storageUrl(bucket, objectPath, token, owner?.visibility ?? "private"),
           visibility: owner?.visibility ?? "private",
         },
       ];
