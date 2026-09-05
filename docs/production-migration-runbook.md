@@ -24,6 +24,11 @@ validated.
   intentionally excluded, along with their products, categories, catalogs,
   carts, orders, reviews, analytics, and referenced Storage objects. The dry
   run prints the excluded business IDs and names.
+- Public migrated Storage objects under `businesses/<businessId>/public/**`
+  receive individual Cloud Storage public-read access and tokenless
+  `storage.googleapis.com` URLs. Private objects retain Firebase download
+  tokens. The importer refuses to apply public access when uniform bucket-level
+  access is enabled, because that would require a different access model.
 
 ## Existing-user ownership claim
 

@@ -268,6 +268,12 @@ async function storageUrls(
       if (!metadata.contentType?.startsWith("image/")) {
         throw new Error("Product image is invalid.");
       }
+      if (id.startsWith(businessPrefix)) {
+        return `https://storage.googleapis.com/${encodeURIComponent(bucketName)}/${id
+          .split("/")
+          .map((segment) => encodeURIComponent(segment))
+          .join("/")}`;
+      }
       const token = metadata.metadata?.firebaseStorageDownloadTokens;
       if (typeof token !== "string" || !token) {
         throw new Error("Product image is invalid.");

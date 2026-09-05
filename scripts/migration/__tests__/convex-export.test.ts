@@ -90,8 +90,9 @@ describe("Convex export migration", () => {
       "businesses/business-1/public/migrated/storage-1",
     ]);
     expect(target.tables.products[0].imageUrls[0]).toContain(
-      "target.appspot.com",
+      "storage.googleapis.com",
     );
+    expect(target.tables.products[0].imageUrls[0]).not.toContain("token=");
     expect(target.tables.products[0]._migration).toMatchObject({
       source: "convex",
       sourceId: "product-1",

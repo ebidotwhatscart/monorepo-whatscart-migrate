@@ -76,7 +76,19 @@ function getFirebaseAdminClients(projectId, bucketName) {
 
 async function applyStorage(bucket, plan, overwriteExisting) {
   let created = 0;
+  let overwritten = 0;
   let skipped = 0;
+  const hasPublicObjects = [...plan.values()].some(
+    (entry) => entry.visibility === "public",
+  );
+  if (hasPublicObjects) {
+    const [bucketMetadata] = await bucket.getMetadata();
+    if (bucketMetadata.iamConfiguration?.uniformBucketLevelAccess?.enabled) {
+      throw new Error(
+        "Public migrated files require object-level ACLs, but this bucket has uniform bucket-level access enabled. Disable uniform bucket-level access or choose a CDN proxy/managed-folder access model before applying the migration.",
+      );
+    }
+  }
   for (const [sourceId, entry] of plan) {
     const file = bucket.file(entry.objectPath);
     let existing = null;
@@ -90,6 +102,7 @@ async function applyStorage(bucket, plan, overwriteExisting) {
       existing?.metadata?.convexStorageId === sourceId &&
       existing?.metadata?.sourceFileChecksum === sourceFileChecksum;
     if (matches) {
+      if (entry.visibility === "public") await file.makePublic();
       skipped += 1;
       continue;
     }
@@ -98,21 +111,34 @@ async function applyStorage(bucket, plan, overwriteExisting) {
         `Storage target ${entry.objectPath} already exists with different migration metadata.`,
       );
     }
-    await bucket.upload(entry.sourceFile, {
-      destination: entry.objectPath,
-      metadata: {
-        contentType: entry.contentType,
+    if (!existing || overwriteExisting) {
+      await bucket.upload(entry.sourceFile, {
+        destination: entry.objectPath,
         metadata: {
-          convexStorageId: sourceId,
-          firebaseStorageDownloadTokens: entry.token,
-          sourceFileChecksum,
+          contentType: entry.contentType,
+          metadata: {
+            convexStorageId: sourceId,
+            ...(entry.visibility === "private"
+              ? { firebaseStorageDownloadTokens: entry.token }
+              : {}),
+            sourceFileChecksum,
+          },
         },
-      },
-      resumable: false,
-    });
-    created += 1;
+        resumable: false,
+      });
+      if (existing) overwritten += 1;
+      else created += 1;
+    }
+    if (entry.visibility === "public") await file.makePublic();
   }
-  return { created, skipped };
+  return {
+    created,
+    overwritten,
+    skipped,
+    publicised: [...plan.values()].filter(
+      (entry) => entry.visibility === "public",
+    ).length,
+  };
 }
 
 async function applyFirestore(firestore, tables, overwriteExisting) {
@@ -167,6 +193,12 @@ async function verifyStorage(bucket, plan) {
         metadata.metadata?.sourceFileChecksum !== expectedChecksum
       ) {
         errors.push(entry.objectPath);
+      }
+      if (entry.visibility === "public") {
+        const [acl] = await bucket.file(entry.objectPath).acl.get();
+        if (!acl.some((grant) => grant.entity === "allUsers" && grant.role === "READER")) {
+          errors.push(`${entry.objectPath}:public-access`);
+        }
       }
     } catch {
       errors.push(entry.objectPath);
