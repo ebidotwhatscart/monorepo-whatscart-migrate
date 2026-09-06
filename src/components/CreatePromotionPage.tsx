@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useMemo, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Calendar, Plus, X } from "lucide-react";
 import { useFirebaseQuery as useQuery } from "../lib/firebase/hooks";
@@ -35,7 +35,9 @@ interface SelectedProductItem {
 
 export function CreatePromotionPage({ business }: CreatePromotionPageProps) {
   const navigate = useNavigate();
-  
+  const [searchParams] = useSearchParams();
+  const editId = searchParams.get("editId");
+
   // Multi-step state (Step 1 -> Step 2)
   const [currentStep, setCurrentStep] = useState<1 | 2>(1);
 
@@ -187,6 +189,29 @@ export function CreatePromotionPage({ business }: CreatePromotionPageProps) {
     }));
   }, [businessProducts, selectedCategories, discountValue, selectedType]);
 
+  // Populate fields if in edit mode
+  useEffect(() => {
+    if (!editId) return;
+    try {
+      const storageKey = `whatscart_promotions_${business._id}`;
+      const existing = JSON.parse(localStorage.getItem(storageKey) || "[]");
+      const found = existing.find((p: any) => p.id === editId);
+      if (found) {
+        setPromotionName(found.title || "");
+        setSelectedType(found.category === "percentage" ? "percentage" : "flat");
+        setDiscountValue(found.discountValue || "0");
+        setApplyTo(found.applyTo || "cart");
+        if (found.couponCode) setCouponCode(found.couponCode);
+        if (found.totalUsageLimit) setTotalUsageLimit(found.totalUsageLimit);
+        if (found.minOrderValue) setMinOrderValue(found.minOrderValue);
+        if (found.selectedCategoryIds) setSelectedCategories(found.selectedCategoryIds);
+        setCurrentStep(2); // Jump straight to edit details
+      }
+    } catch {
+      // ignore
+    }
+  }, [editId, business._id]);
+
   const handleStep2Submit = () => {
     if (!promotionName.trim()) {
       toast.error("Please enter a promotion name");
@@ -205,8 +230,8 @@ export function CreatePromotionPage({ business }: CreatePromotionPageProps) {
       return;
     }
 
-    const newPromo = {
-      id: `promo-${Date.now()}`,
+    const promoPayload = {
+      id: editId || `promo-${Date.now()}`,
       title: promotionName.trim(),
       type:
         applyTo === "cart"
@@ -238,12 +263,21 @@ export function CreatePromotionPage({ business }: CreatePromotionPageProps) {
     try {
       const storageKey = `whatscart_promotions_${business._id}`;
       const existing = JSON.parse(localStorage.getItem(storageKey) || "[]");
-      localStorage.setItem(storageKey, JSON.stringify([newPromo, ...existing]));
+      let updated;
+      if (editId) {
+        updated = existing.map((p: any) => (p.id === editId ? { ...p, ...promoPayload } : p));
+        if (!existing.some((p: any) => p.id === editId)) {
+          updated = [promoPayload, ...existing];
+        }
+      } else {
+        updated = [promoPayload, ...existing];
+      }
+      localStorage.setItem(storageKey, JSON.stringify(updated));
     } catch {
       // ignore storage errors
     }
 
-    toast.success(`Promotion "${promotionName}" created successfully!`);
+    toast.success(editId ? `Promotion "${promotionName}" updated successfully!` : `Promotion "${promotionName}" created successfully!`);
     navigate("/dashboard/promotions");
   };
 
