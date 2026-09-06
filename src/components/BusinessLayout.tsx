@@ -37,6 +37,7 @@ export function BusinessLayout({ children, business }: BusinessLayoutProps) {
     if (p.includes("/products/collections/edit/")) return true;
     if (p.startsWith("/dashboard/orders/") && p.length > "/dashboard/orders/".length) return true;
     if (p === "/dashboard/products" && s.includes("action=create")) return true;
+    if (p === "/dashboard/promotions/create") return true;
     return false;
   })();
 

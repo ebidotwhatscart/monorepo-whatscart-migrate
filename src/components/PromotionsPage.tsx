@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
   Calendar,
@@ -108,6 +109,7 @@ const INITIAL_PROMOTIONS: PromotionItem[] = [
 ];
 
 export function PromotionsPage({ business }: PromotionsPageProps) {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<PromotionStatus>("all");
   const [promotions, setPromotions] = useState<PromotionItem[]>(INITIAL_PROMOTIONS);
 
@@ -129,7 +131,7 @@ export function PromotionsPage({ business }: PromotionsPageProps) {
   }, [activeTab, promotions]);
 
   const handleCreatePromotion = () => {
-    toast.info("Promotion builder coming soon!");
+    navigate("/dashboard/promotions/create");
   };
 
   const handleActionClick = (promo: PromotionItem) => {

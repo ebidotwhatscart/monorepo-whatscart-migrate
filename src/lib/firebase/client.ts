@@ -19,6 +19,8 @@ let cachedClient: {
   storage: ReturnType<typeof getStorage>;
 } | null = null;
 
+let emulatorsConnected = false;
+
 export function getFirebaseClient() {
   if (cachedClient) return cachedClient;
   if (!firebaseConfig.apiKey || !firebaseConfig.projectId) return null;
