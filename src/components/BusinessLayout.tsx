@@ -7,6 +7,7 @@ import {
   User,
 } from "lucide-react";
 import whatscartPoweredLogoUrl from "../assets/figma/whatscart-powered-logo.svg";
+import couponIconUrl from "../assets/figma/promotions/coupon-icon.svg";
 
 const ADMIN_ACCENT = "#3DAC35";
 
@@ -42,12 +43,19 @@ export function BusinessLayout({ children, business }: BusinessLayoutProps) {
   const getActiveTab = () => {
     if (location.pathname.includes("/products")) return "products";
     if (location.pathname.includes("/orders")) return "orders";
+    if (location.pathname.includes("/promotions")) return "promotions";
     if (location.pathname.includes("/profile")) return "profile";
     return "dashboard";
   };
 
   const activeTab = getActiveTab();
-  const navItems = [
+  const navItems: Array<{
+    id: "dashboard" | "products" | "orders" | "promotions" | "profile";
+    label: string;
+    icon: any;
+    customIcon?: string;
+    to: string;
+  }> = [
     { id: "dashboard", label: "Dashboard", icon: LayoutGrid, to: "/dashboard" },
     {
       id: "products",
@@ -61,8 +69,15 @@ export function BusinessLayout({ children, business }: BusinessLayoutProps) {
       icon: ClipboardList,
       to: "/dashboard/orders",
     },
+    {
+      id: "promotions",
+      label: "Promotions",
+      icon: null,
+      customIcon: couponIconUrl,
+      to: "/dashboard/promotions",
+    },
     { id: "profile", label: "Profile", icon: User, to: "/dashboard/profile" },
-  ] as const;
+  ];
 
   return (
     <div className="min-h-screen flex justify-center">
@@ -76,24 +91,37 @@ export function BusinessLayout({ children, business }: BusinessLayoutProps) {
 
       {!hideBottomNav && (
         <nav className="fixed bottom-0 z-50 border-t border-slate-200 bg-white w-[428px] max-w-full left-1/2 -translate-x-1/2">
-          <div className="grid grid-cols-4 px-1 py-4">
-              {navItems.map(({ id, label, icon: Icon, to }) => {
+          <div className="grid grid-cols-5 px-1 py-3">
+              {navItems.map(({ id, label, icon: Icon, customIcon, to }) => {
                 const isActive = activeTab === id;
 
                 return (
                   <Link
                     key={id}
                     to={to}
-                    className="flex flex-col items-center justify-center gap-3 px-2 py-2 transition"
+                    className="flex flex-col items-center justify-center gap-1.5 px-1 py-1.5 transition"
                   >
-                    <Icon
-                      className="h-8 w-6 stroke-[2.1]"
-                      style={{
-                        color: isActive ? ADMIN_ACCENT : "#64748B",
-                      }}
-                    />
+                    {Icon ? (
+                      <Icon
+                        className="h-6 w-6 stroke-[2.1]"
+                        style={{
+                          color: isActive ? ADMIN_ACCENT : "#64748B",
+                        }}
+                      />
+                    ) : (
+                      <img
+                        src={customIcon}
+                        alt={label}
+                        className="h-6 w-6"
+                        style={{
+                          filter: isActive
+                            ? "invert(58%) sepia(85%) saturate(415%) hue-rotate(69deg) brightness(91%) contrast(87%)"
+                            : "invert(49%) sepia(16%) saturate(464%) hue-rotate(177deg) brightness(90%) contrast(92%)",
+                        }}
+                      />
+                    )}
                     <span
-                      className="text-[12px] font-semibold tracking-[0.08em]"
+                      className="text-[10.5px] font-semibold tracking-[0.04em] truncate max-w-full"
                       style={{
                         color: isActive ? ADMIN_ACCENT : "#64748B",
                       }}

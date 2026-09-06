@@ -59,6 +59,7 @@ export async function POST(request: NextRequest) {
     });
     return NextResponse.json({ storageId: path });
   } catch (error) {
+    console.error("Upload handler failed:", error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Upload failed." },
       { status: 400 },
