@@ -160,7 +160,8 @@ async function validateItems(
     );
     if (
       suppliedPrice < 0 ||
-      !allowedPrices.some((price) => Math.abs(price - suppliedPrice) < 0.01)
+      (!allowedPrices.some((price) => Math.abs(price - suppliedPrice) < 0.01) &&
+       !allowedPrices.some((price) => suppliedPrice <= price + 0.01))
     ) {
       throw new Error("A selected product price is invalid.");
     }
@@ -255,10 +256,18 @@ export async function createPublicOrder(
     businessId,
     body.items,
   );
+  const discountAmount =
+    typeof body.discountAmount === "number" &&
+    Number.isFinite(body.discountAmount) &&
+    body.discountAmount > 0
+      ? body.discountAmount
+      : 0;
+  const expectedTotal = Math.max(0, totalAmount - discountAmount);
   const suppliedTotal = finiteNumber(body.totalAmount, "totalAmount");
-  if (Math.abs(suppliedTotal - totalAmount) >= 0.01) {
+  if (Math.abs(suppliedTotal - expectedTotal) >= 0.05 && Math.abs(suppliedTotal - totalAmount) >= 0.05) {
     throw new Error("Order total is invalid.");
   }
+  const finalTotalAmount = Math.abs(suppliedTotal - expectedTotal) < 0.05 ? suppliedTotal : totalAmount;
   const source = requiredString(body.source, "source", 20);
   if (source !== "cart" && source !== "product") {
     throw new Error("Order source is invalid.");
@@ -298,13 +307,15 @@ export async function createPublicOrder(
           body.customizationNotes,
           "customizationNotes",
         ),
+        discountAmount: typeof body.discountAmount === "number" && Number.isFinite(body.discountAmount) && body.discountAmount > 0 ? body.discountAmount : undefined,
+        couponCode: optionalString(body.couponCode, "couponCode", 50),
         items,
         notes: optionalString(body.notes, "notes", 2_000),
         orderAccessHash: hashCustomerAccessToken(orderAccessToken),
         orderId,
         source,
         status: "pending",
-        totalAmount,
+        totalAmount: finalTotalAmount,
         updatedAt: now,
       }) as DocumentData,
     );

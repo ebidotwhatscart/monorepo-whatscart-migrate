@@ -41,6 +41,8 @@ type WhatsAppOrderMessageInput = {
   notes?: string;
   customizationTitle?: string;
   customizationNotes?: string[];
+  discountAmount?: number;
+  couponCode?: string;
   orderLink: string;
   upiId?: string;
   businessName?: string;
@@ -141,6 +143,9 @@ export function buildWhatsAppOrderMessage(input: WhatsAppOrderMessageInput) {
     `*Items:*\n${itemLines}`,
     orderCustomization,
     itemCustomization,
+    input.discountAmount && input.discountAmount > 0
+      ? `*Discount${input.couponCode ? ` (${input.couponCode})` : ""}:* -₹${formatOrderAmount(input.discountAmount)}`
+      : "",
     `*Total: ₹${formatOrderAmount(input.totalAmount)}*`,
     deliveryAddress ? `*Delivery Address:* ${deliveryAddress}` : "",
     upiLink ? `*Payment link:* ${upiLink}\n*Payment:* UPI link above` : "*Payment:* Confirm with store",
