@@ -16,6 +16,7 @@ import { DashboardHome } from "./components/DashboardHome";
 import { ProductsPage } from "./components/ProductsPage";
 import { DashboardOrders } from "./components/DashboardOrders";
 import { PromotionsPage } from "./components/PromotionsPage";
+import { CreatePromotionPage } from "./components/CreatePromotionPage";
 import { ProfilePage } from "./components/ProfilePage";
 import { SiteSettings } from "./components/SiteSettings";
 import { AdminProfilePage } from "./components/AdminProfilePage";
@@ -277,6 +278,14 @@ function Content() {
               element={
                 <BusinessLayout business={activeBusiness}>
                   <PromotionsPage business={activeBusiness} />
+                </BusinessLayout>
+              }
+            />
+            <Route
+              path="/dashboard/promotions/create"
+              element={
+                <BusinessLayout business={activeBusiness}>
+                  <CreatePromotionPage business={activeBusiness} />
                 </BusinessLayout>
               }
             />
