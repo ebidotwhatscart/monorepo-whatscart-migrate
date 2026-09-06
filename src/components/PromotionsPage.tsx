@@ -8,11 +8,13 @@ import {
   Tag,
 } from "lucide-react";
 import type { Id } from "../lib/firebase/operations";
-import couponIconUrl from "../assets/figma/promotions/coupon-icon.svg";
-import percentIconUrl from "../assets/figma/promotions/percent-icon.svg";
-import fixedIconUrl from "../assets/figma/promotions/fixed-icon.svg";
-import comboIconUrl from "../assets/figma/promotions/combo-icon.svg";
-import flashIconUrl from "../assets/figma/promotions/flash-icon.svg";
+import {
+  CouponIcon,
+  PercentIcon,
+  FixedDiscountIcon,
+  ComboOfferIcon,
+  FlashSaleIcon,
+} from "./promotions/PromotionIcons";
 
 interface Business {
   _id: Id<"businesses">;
@@ -154,16 +156,16 @@ export function PromotionsPage({ business }: PromotionsPageProps) {
     }
   };
 
-  const renderIcon = (type: PromotionItem["iconType"]) => {
+  const renderIcon = (type: PromotionItem["iconType"], color: string) => {
     switch (type) {
       case "percentage":
-        return <img src={percentIconUrl} alt="Percentage" className="w-5 h-5" />;
+        return <PercentIcon className="w-5 h-5" color={color} />;
       case "fixed":
-        return <img src={fixedIconUrl} alt="Fixed Discount" className="w-5 h-5" />;
+        return <FixedDiscountIcon className="w-5 h-5" color={color} />;
       case "combo":
-        return <img src={comboIconUrl} alt="Combo Offer" className="w-5 h-5" />;
+        return <ComboOfferIcon className="w-5 h-5" color={color} />;
       case "flash":
-        return <img src={flashIconUrl} alt="Flash Sale" className="w-5 h-5" />;
+        return <FlashSaleIcon className="w-5 h-5" color={color} />;
       default:
         return <Tag className="w-5 h-5" />;
     }
@@ -232,7 +234,7 @@ export function PromotionsPage({ business }: PromotionsPageProps) {
           onClick={handleCreatePromotion}
           className="w-full h-[52px] rounded-[8px] bg-[#3DAC35] hover:bg-[#34992e] active:scale-[0.99] text-white font-semibold text-[16px] flex items-center justify-center gap-2.5 shadow-sm transition-all"
         >
-          <img src={couponIconUrl} alt="Coupon" className="w-5 h-5 invert brightness-0" />
+          <CouponIcon className="w-5 h-5" color="#ffffff" />
           <span>Create Promotion</span>
         </button>
 
@@ -283,7 +285,7 @@ export function PromotionsPage({ business }: PromotionsPageProps) {
                       className="w-12 h-12 rounded-[8px] flex items-center justify-center shrink-0"
                       style={{ backgroundColor: promo.iconBgColor }}
                     >
-                      {renderIcon(promo.iconType)}
+                      {renderIcon(promo.iconType, promo.iconColor)}
                     </div>
                     <div className="min-w-0">
                       <h3 className="text-[18px] font-bold text-[#171D15] leading-tight truncate">

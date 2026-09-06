@@ -2,10 +2,12 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import type { Id } from "../lib/firebase/operations";
-import backArrowUrl from "../assets/figma/promotions/back-arrow.svg";
-import flatAmountIconUrl from "../assets/figma/promotions/flat-amount-icon.svg";
-import percentOffIconUrl from "../assets/figma/promotions/percent-off-icon.svg";
-import infoLockIconUrl from "../assets/figma/promotions/info-lock-icon.svg";
+import {
+  BackArrowIcon,
+  FixedDiscountIcon,
+  PercentIcon,
+  InfoLockIcon,
+} from "./promotions/PromotionIcons";
 
 interface Business {
   _id: Id<"businesses">;
@@ -45,7 +47,7 @@ export function CreatePromotionPage({ business }: CreatePromotionPageProps) {
             className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-slate-100 active:scale-95 transition-all text-[#0F172A]"
             aria-label="Go back"
           >
-            <img src={backArrowUrl} alt="Back" className="w-4 h-4" />
+            <BackArrowIcon className="w-4 h-4" color="#0F172A" />
           </button>
           <h1 className="text-[18px] font-bold text-[#0F172A] leading-none">
             Create Promotion
@@ -88,7 +90,7 @@ export function CreatePromotionPage({ business }: CreatePromotionPageProps) {
               <div className="flex items-center gap-4 min-w-0">
                 {/* Blue-ish icon container as in Figma */}
                 <div className="w-12 h-12 rounded-[8px] bg-[#DAE2FD]/30 flex items-center justify-center shrink-0">
-                  <img src={flatAmountIconUrl} alt="Flat amount" className="w-5 h-5" />
+                  <FixedDiscountIcon className="w-5 h-5" color="#2563EB" />
                 </div>
                 <div className="min-w-0">
                   <h3 className="text-[18px] font-bold text-[#171D15] leading-tight truncate">
@@ -131,7 +133,7 @@ export function CreatePromotionPage({ business }: CreatePromotionPageProps) {
               <div className="flex items-center gap-4 min-w-0">
                 {/* Green icon container as in Figma */}
                 <div className="w-12 h-12 rounded-[8px] bg-[#006E08]/10 flex items-center justify-center shrink-0">
-                  <img src={percentOffIconUrl} alt="Percentage off" className="w-5 h-5" />
+                  <PercentIcon className="w-5 h-5" color="#006E08" />
                 </div>
                 <div className="min-w-0">
                   <h3 className="text-[18px] font-bold text-[#171D15] leading-tight truncate">
@@ -160,7 +162,7 @@ export function CreatePromotionPage({ business }: CreatePromotionPageProps) {
 
           {/* Descriptive Information Card */}
           <div className="rounded-[12px] bg-[#006E08]/[0.05] border border-[#006E08]/20 p-5 flex items-start gap-3">
-            <img src={infoLockIconUrl} alt="Info" className="w-4 h-4 mt-0.5 shrink-0" />
+            <InfoLockIcon className="w-4 h-4 mt-0.5 shrink-0" color="#006E08" />
             <p className="text-[14px] leading-relaxed text-[#3F4A3A]">
               Choosing a discount type will lock the rules for this specific campaign. You can edit values later.
             </p>
