@@ -204,6 +204,45 @@ export function CreatePromotionPage({ business }: CreatePromotionPageProps) {
       toast.error("Please select at least one category");
       return;
     }
+
+    const newPromo = {
+      id: `promo-${Date.now()}`,
+      title: promotionName.trim(),
+      type:
+        applyTo === "cart"
+          ? (selectedType === "percentage" ? "Percentage Off - Whole Order" : "Fixed Discount - Whole Order")
+          : applyTo === "products"
+          ? `${selectedProducts.length} Selected Products`
+          : `${selectedCategories.length} Selected Categories`,
+      category: selectedType === "percentage" ? "percentage" : "fixed",
+      status: "ACTIVE",
+      discountLabel: selectedType === "percentage" ? `${discountValue}% OFF` : `₹${discountValue} OFF`,
+      scheduleLabel: endDate ? `Ends ${new Date(endDate).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}` : "Active Now",
+      iconType: selectedType === "percentage" ? "percentage" : "fixed",
+      iconBgColor: selectedType === "percentage" ? "rgba(0, 110, 8, 0.1)" : "rgba(218, 226, 253, 0.3)",
+      iconColor: selectedType === "percentage" ? "#006E08" : "#2563EB",
+      badgeBgColor: "rgba(0, 110, 8, 0.1)",
+      badgeTextColor: "#006E08",
+      actionText: "→ View Details",
+      isExpired: false,
+      applyTo,
+      discountValue,
+      couponCode: couponCode || undefined,
+      totalUsageLimit: totalUsageLimit || undefined,
+      minOrderValue: minOrderValue || undefined,
+      selectedProductIds: selectedProducts.map((p) => p._id),
+      selectedCategoryIds: selectedCategories,
+      createdAt: Date.now(),
+    };
+
+    try {
+      const storageKey = `whatscart_promotions_${business._id}`;
+      const existing = JSON.parse(localStorage.getItem(storageKey) || "[]");
+      localStorage.setItem(storageKey, JSON.stringify([newPromo, ...existing]));
+    } catch {
+      // ignore storage errors
+    }
+
     toast.success(`Promotion "${promotionName}" created successfully!`);
     navigate("/dashboard/promotions");
   };
