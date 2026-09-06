@@ -15,6 +15,7 @@ import { BusinessSetup } from "./components/BusinessSetup";
 import { DashboardHome } from "./components/DashboardHome";
 import { ProductsPage } from "./components/ProductsPage";
 import { DashboardOrders } from "./components/DashboardOrders";
+import { PromotionsPage } from "./components/PromotionsPage";
 import { ProfilePage } from "./components/ProfilePage";
 import { SiteSettings } from "./components/SiteSettings";
 import { AdminProfilePage } from "./components/AdminProfilePage";
@@ -179,7 +180,12 @@ function Content() {
   const loggedInUser = useQuery(api.auth.loggedInUser);
   const userBusiness = useQuery(api.businesses.getUserBusiness);
   const [searchParams] = useSearchParams();
-  const isDashboardHost = window.location.hostname === appHostname || window.location.hostname === "admin.whatscart.in";
+  const isDashboardHost =
+    window.location.hostname === appHostname ||
+    window.location.hostname === "admin.whatscart.in" ||
+    window.location.hostname === "localhost" ||
+    window.location.hostname === "lvh.me" ||
+    window.location.hostname === "127.0.0.1";
   const [storedAdminBusinessId, setStoredAdminBusinessId] = useState(() =>
     typeof window !== "undefined" ? window.sessionStorage.getItem("whatscart-admin-business") : null,
   );
@@ -263,6 +269,14 @@ function Content() {
               element={
                   <BusinessLayout business={activeBusiness}>
                   <DashboardOrders business={activeBusiness} />
+                </BusinessLayout>
+              }
+            />
+            <Route
+              path="/dashboard/promotions"
+              element={
+                <BusinessLayout business={activeBusiness}>
+                  <PromotionsPage business={activeBusiness} />
                 </BusinessLayout>
               }
             />

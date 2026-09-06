@@ -1,5 +1,6 @@
 {
   "projects": {
-    "default": "whatscart-in"
+    "default": "whatscart-in",
+    "dev": "whatscart-dev"
   }
 }
