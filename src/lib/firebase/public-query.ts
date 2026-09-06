@@ -256,6 +256,9 @@ function observeBusinessOrderStats(
         ready: 0,
         total: snapshot.size,
         totalRevenue: 0,
+        promotionSales: 0,
+        totalCouponsUsed: 0,
+        totalDiscountAmount: 0,
       };
       snapshot.docs.forEach((orderSnapshot) => {
         const order = orderSnapshot.data();
@@ -268,6 +271,19 @@ function observeBusinessOrderStats(
           typeof order.totalAmount === "number"
         ) {
           stats.totalRevenue += order.totalAmount;
+          
+          const hasDiscount =
+            (typeof order.discountAmount === "number" && order.discountAmount > 0) ||
+            Boolean(order.couponCode) ||
+            Boolean(order.promotionId);
+          
+          if (hasDiscount) {
+            stats.promotionSales += order.totalAmount;
+            stats.totalCouponsUsed += 1;
+            if (typeof order.discountAmount === "number") {
+              stats.totalDiscountAmount += order.discountAmount;
+            }
+          }
         }
       });
       emit(stats);
