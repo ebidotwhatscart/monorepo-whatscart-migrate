@@ -21,6 +21,7 @@ import {
   getGoogleMapsLocationUrl,
   type CustomerLocation,
 } from "../lib/orderDetails";
+import { evaluateCartCoupon } from "../lib/storefrontPromotions";
 import {
   buildReferenceImagePath,
   extractReferenceImageId,
@@ -176,7 +177,7 @@ export function CheckoutPage() {
     business ? { businessId: business._id } : "skip"
   );
 
-  // Create a map of product IDs to image URLs
+  // Create a map of product IDs to image URLs and base prices
   const productImageMap = useMemo(() => {
     const map = new Map<string, string | undefined>();
     if (products) {
@@ -184,6 +185,18 @@ export function CheckoutPage() {
         const image = product.imageUrls?.[0];
         if (image) {
           map.set(product._id, image);
+        }
+      });
+    }
+    return map;
+  }, [products]);
+
+  const productPriceMap = useMemo(() => {
+    const map = new Map<string, number>();
+    if (products) {
+      products.forEach((product) => {
+        if (typeof product.price === "number") {
+          map.set(product._id, product.price);
         }
       });
     }
@@ -244,10 +257,25 @@ export function CheckoutPage() {
     });
   }
 
-  const totalAmount = checkoutItems.reduce(
+  const rawSubtotal = checkoutItems.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0
   );
+
+  const couponParam = searchParams.get("coupon");
+  const cartDiscount = useMemo(() => {
+    if (!couponParam || !business?._id) {
+      return {
+        hasCoupon: false,
+        discountAmount: 0,
+        finalTotal: rawSubtotal,
+      };
+    }
+    return evaluateCartCoupon(couponParam, rawSubtotal, business._id);
+  }, [couponParam, rawSubtotal, business?._id]);
+
+  const discountAmount = cartDiscount.discountAmount;
+  const totalAmount = cartDiscount.finalTotal;
 
 
   const handleUseCurrentLocation = () => {
@@ -343,6 +371,8 @@ export function CheckoutPage() {
         customerLocation: normalizedLocation,
         items: checkoutItems,
         totalAmount,
+        discountAmount: discountAmount > 0 ? discountAmount : undefined,
+        couponCode: couponParam?.trim().toUpperCase() || undefined,
         source,
         notes: trimmedNotes || undefined,
         customerNotes: trimmedNotes || undefined,
@@ -387,6 +417,8 @@ export function CheckoutPage() {
         customerDoorNumber: trimmedDoorNumber,
         items: checkoutItems,
         totalAmount,
+        discountAmount: discountAmount > 0 ? discountAmount : undefined,
+        couponCode: couponParam?.trim().toUpperCase() || undefined,
         address: trimmedAddress,
         mapLink: locationLink,
         notes: trimmedNotes || undefined,
@@ -632,9 +664,21 @@ export function CheckoutPage() {
                         {item.name}
                       </p>
                       <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
-                      <p className="text-sm font-semibold text-gray-900">
-                        ₹{(item.price * item.quantity).toFixed(2)}
-                      </p>
+                      <div className="flex items-baseline gap-2">
+                        <p
+                          className="text-sm font-semibold"
+                          style={{
+                            color: (productPriceMap.get(item.productId) ?? 0) > item.price ? "#006E08" : "#0F172A",
+                          }}
+                        >
+                          ₹{(item.price * item.quantity).toFixed(2)}
+                        </p>
+                        {(productPriceMap.get(item.productId) ?? 0) > item.price && (
+                          <p className="text-xs text-slate-400 line-through font-normal">
+                            ₹{((productPriceMap.get(item.productId)!) * item.quantity).toFixed(2)}
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -643,8 +687,21 @@ export function CheckoutPage() {
               <div className="border-t pt-4 space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Subtotal</span>
-                  <span className="font-medium">₹{totalAmount.toFixed(2)}</span>
+                  <span className="font-medium">₹{rawSubtotal.toFixed(2)}</span>
                 </div>
+                {discountAmount > 0 && (
+                  <div className="flex justify-between text-sm font-medium text-[#3DAC35]">
+                    <span className="flex items-center gap-1.5">
+                      Discount
+                      {couponParam && (
+                        <span className="rounded bg-[#3DAC35]/10 px-1.5 py-0.5 text-xs font-bold text-[#3DAC35]">
+                          {couponParam.toUpperCase()}
+                        </span>
+                      )}
+                    </span>
+                    <span>-₹{discountAmount.toFixed(2)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Delivery</span>
                   <span className="font-medium text-green-600">TBD</span>

@@ -50,6 +50,7 @@ import {
   createCartItemId,
   formatCustomizationMessageLines,
 } from "../lib/productCustomization";
+import { calculateProductDiscount } from "../lib/storefrontPromotions";
 
 // These surfaces are not needed to paint or operate the product hero. Loading
 // them only when they can be seen keeps their query clients and icon bundles
@@ -160,6 +161,14 @@ export function ProductDetail() {
   const sizeOptions = availableSizes;
   const baseProductPrice = activeVariant?.price ?? product?.price ?? sizesData.find((row) => typeof row.price === "number")?.price ?? 0;
   const currentProductPrice = selectedSizePrice > 0 ? selectedSizePrice : baseProductPrice;
+
+  const discountInfo = calculateProductDiscount(
+    product?._id ?? "",
+    product?.categoryId,
+    currentProductPrice,
+    business?._id,
+  );
+  const finalEffectivePrice = discountInfo.discountedPrice;
 
   const priceLight = !isDark(brandColor);
   const darkenColor = (h: string, f: number) => {
@@ -287,7 +296,7 @@ export function ProductDetail() {
       cartItemId: createCartItemId(targetProduct._id, customizationPayload),
       productId: targetProduct._id,
       name: targetProduct.name,
-      price: currentProductPrice,
+      price: finalEffectivePrice,
       image: product.imageUrls?.[0] ?? undefined,
       quantity,
       customization: hasSelectedCustomizations(customizationPayload)
@@ -696,15 +705,27 @@ export function ProductDetail() {
               >
                 {product.name}
               </h2>
-              <p
-                className="pt-2 text-2xl font-bold leading-9 lg:text-[30px] lg:leading-[36px]"
-                style={{
-                  width: "fit-content",
-                  color: priceTextColor,
-                }}
-              >
-                ₹{currentProductPrice.toFixed(0)}
-              </p>
+              <div className="flex items-center gap-3 pt-2">
+                <p
+                  className="text-2xl font-bold leading-9 lg:text-[30px] lg:leading-[36px]"
+                  style={{
+                    width: "fit-content",
+                    color: discountInfo.hasDiscount ? "#006E08" : priceTextColor,
+                  }}
+                >
+                  ₹{finalEffectivePrice.toFixed(0)}
+                </p>
+                {discountInfo.hasDiscount && (
+                  <>
+                    <p className="text-lg text-slate-400 line-through font-normal">
+                      ₹{currentProductPrice.toFixed(0)}
+                    </p>
+                    <span className="rounded-full bg-[#006E08] px-2.5 py-0.5 text-xs font-bold text-white shadow-sm">
+                      {discountInfo.discountBadge}
+                    </span>
+                  </>
+                )}
+              </div>
 
               {colorVariantOptions.length > 0 && (
                 <section aria-label="Colour variants" className="pt-6">

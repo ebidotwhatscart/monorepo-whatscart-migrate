@@ -47,7 +47,20 @@ export function CartSidebar({
     return map;
   }, [products]);
 
+  const productPriceMap = useCallback(() => {
+    const map = new Map<string, number>();
+    if (products) {
+      products.forEach((product) => {
+        if (typeof product.price === "number") {
+          map.set(product._id, product.price);
+        }
+      });
+    }
+    return map;
+  }, [products]);
+
   const imageMap = productImageMap();
+  const originalPriceMap = productPriceMap();
 
   // Body scroll lock when open
   useEffect(() => {
@@ -194,9 +207,21 @@ export function CartSidebar({
                     {/* Product info */}
                     <div className="flex-1 min-w-0">
                       <h3 className="truncate font-medium" style={{ color: storefrontTheme.textPrimary }}>{item.name}</h3>
-                      <p className="text-sm font-semibold mt-1" style={{ color: themeColor }}>
-                        ₹{item.price.toFixed(2)}
-                      </p>
+                      <div className="flex items-baseline gap-2 mt-1">
+                        <p
+                          className="text-sm font-semibold"
+                          style={{
+                            color: (originalPriceMap.get(item.productId) ?? 0) > item.price ? "#006E08" : themeColor,
+                          }}
+                        >
+                          ₹{item.price.toFixed(2)}
+                        </p>
+                        {(originalPriceMap.get(item.productId) ?? 0) > item.price && (
+                          <p className="text-xs text-slate-400 line-through font-normal">
+                            ₹{(originalPriceMap.get(item.productId)!).toFixed(2)}
+                          </p>
+                        )}
+                      </div>
                       {item.customizationLines?.length ? (
                         <ul className="mt-2 list-disc pl-4 text-xs text-gray-500">
                           {item.customizationLines.map((line) => (
