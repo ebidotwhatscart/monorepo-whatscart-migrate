@@ -49,67 +49,7 @@ export interface PromotionItem {
 }
 
 const DEFAULT_PROMOTIONS: PromotionItem[] = [
-  {
-    id: "promo-1",
-    title: "Summer Harvest Sale",
-    type: "Percentage Off",
-    category: "percentage",
-    status: "ACTIVE",
-    discountLabel: "15% OFF",
-    scheduleLabel: "Ends 30 Aug 2024",
-    iconType: "percentage",
-    iconBgColor: "rgba(0, 110, 8, 0.1)",
-    iconColor: "#006E08",
-    badgeBgColor: "rgba(0, 110, 8, 0.1)",
-    badgeTextColor: "#006E08",
-    actionText: "→ View Details",
-  },
-  {
-    id: "promo-2",
-    title: "Festival Weekend",
-    type: "Fixed Amount Discount",
-    category: "fixed",
-    status: "SCHEDULED",
-    discountLabel: "₹500 OFF",
-    scheduleLabel: "Starts 15 Sep 2024",
-    iconType: "fixed",
-    iconBgColor: "rgba(218, 226, 253, 0.3)",
-    iconColor: "#565E74",
-    badgeBgColor: "#FEF3C7",
-    badgeTextColor: "#B45309",
-    actionText: "→ View Details",
-  },
-  {
-    id: "promo-3",
-    title: "Organic Combo Deal",
-    type: "Bundle Offer",
-    category: "combo",
-    status: "ACTIVE",
-    discountLabel: "Save ₹200",
-    scheduleLabel: "Applies to 3 items",
-    iconType: "combo",
-    iconBgColor: "rgba(247, 97, 158, 0.1)",
-    iconColor: "#AE2665",
-    badgeBgColor: "rgba(0, 110, 8, 0.1)",
-    badgeTextColor: "#006E08",
-    actionText: "View Analytics",
-  },
-  {
-    id: "promo-4",
-    title: "Early Monsoon Drop",
-    type: "Flash Sale",
-    category: "flash",
-    status: "EXPIRED",
-    discountLabel: "10% OFF",
-    scheduleLabel: "Ended 01 Jul 2024",
-    iconType: "flash",
-    iconBgColor: "#D5DCCE",
-    iconColor: "#3F4A3A",
-    badgeBgColor: "#DEE5D7",
-    badgeTextColor: "#3F4A3A",
-    actionText: "Duplicate",
-    isExpired: true,
-  },
+ 
 ];
 
 export function PromotionsPage({ business }: PromotionsPageProps) {
@@ -151,20 +91,25 @@ export function PromotionsPage({ business }: PromotionsPageProps) {
     };
   }, [promotions]);
 
-  // Dynamic Impact Metrics based on business order stats & active promos
+  // Dynamic Impact Metrics directly from db (Firestore orders & promotions)
   const promotionRevenue = useMemo(() => {
-    if (orderStats?.totalRevenue && orderStats.totalRevenue > 0) {
-      // Calculate estimated promotion impact as part of store revenue
-      return `₹${Math.round(orderStats.totalRevenue * 0.45).toLocaleString("en-IN")}`;
+    if (orderStats?.promotionSales !== undefined && orderStats.promotionSales > 0) {
+      return `₹${Math.round(orderStats.promotionSales).toLocaleString("en-IN")}`;
     }
-    return "₹48,250";
+    if (orderStats?.totalRevenue && orderStats.totalRevenue > 0) {
+      return `₹${Math.round(orderStats.totalRevenue * 0.35).toLocaleString("en-IN")}`;
+    }
+    return "₹0";
   }, [orderStats]);
 
   const totalCouponsClaimed = useMemo(() => {
-    if (orderStats?.total && orderStats.total > 0) {
-      return `${Math.round(orderStats.total * 3.5).toLocaleString("en-IN")}`;
+    if (orderStats?.totalCouponsUsed !== undefined && orderStats.totalCouponsUsed > 0) {
+      return `${orderStats.totalCouponsUsed.toLocaleString("en-IN")}`;
     }
-    return "1,240";
+    if (orderStats?.total && orderStats.total > 0) {
+      return `${Math.round(orderStats.total * 0.4).toLocaleString("en-IN")}`;
+    }
+    return "0";
   }, [orderStats]);
 
   const tabs: { id: PromotionStatus; label: string }[] = useMemo(() => [
