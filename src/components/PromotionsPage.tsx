@@ -188,7 +188,45 @@ export function PromotionsPage({ business }: PromotionsPageProps) {
     navigate("/dashboard/promotions/create");
   };
 
-  const handleActionClick = (promo: PromotionItem) => {
+  const [selectedPromo, setSelectedPromo] = useState<PromotionItem | null>(null);
+  const [promoToDelete, setPromoToDelete] = useState<PromotionItem | null>(null);
+
+  const handleCardClick = (promo: PromotionItem) => {
+    setSelectedPromo(promo);
+  };
+
+  const handleEditPromotion = (promo: PromotionItem) => {
+    setSelectedPromo(null);
+    navigate(`/dashboard/promotions/create?editId=${promo.id}`);
+  };
+
+  const handleDeleteClick = (promo: PromotionItem) => {
+    setPromoToDelete(promo);
+  };
+
+  const handleConfirmDelete = () => {
+    if (!promoToDelete) return;
+    const targetId = promoToDelete.id;
+    setPromotions((prev) => prev.filter((p) => p.id !== targetId));
+
+    try {
+      const storageKey = `whatscart_promotions_${business._id}`;
+      const existing = JSON.parse(localStorage.getItem(storageKey) || "[]");
+      const updated = existing.filter((p: any) => p.id !== targetId);
+      localStorage.setItem(storageKey, JSON.stringify(updated));
+    } catch {
+      // ignore
+    }
+
+    toast.success(`Promotion "${promoToDelete.title}" deleted successfully!`);
+    setPromoToDelete(null);
+    if (selectedPromo?.id === targetId) {
+      setSelectedPromo(null);
+    }
+  };
+
+  const handleActionClick = (e: React.MouseEvent, promo: PromotionItem) => {
+    e.stopPropagation();
     if (promo.actionText === "Duplicate") {
       const duplicated: PromotionItem = {
         ...promo,
@@ -202,9 +240,18 @@ export function PromotionsPage({ business }: PromotionsPageProps) {
         isExpired: false,
       };
       setPromotions((prev) => [duplicated, ...prev]);
+
+      try {
+        const storageKey = `whatscart_promotions_${business._id}`;
+        const existing = JSON.parse(localStorage.getItem(storageKey) || "[]");
+        localStorage.setItem(storageKey, JSON.stringify([duplicated, ...existing]));
+      } catch {
+        // ignore
+      }
+
       toast.success(`Duplicated "${promo.title}" as active promotion!`);
     } else {
-      toast.info(`Opened details for "${promo.title}"`);
+      setSelectedPromo(promo);
     }
   };
 
@@ -326,7 +373,8 @@ export function PromotionsPage({ business }: PromotionsPageProps) {
             filteredPromotions.map((promo) => (
               <div
                 key={promo.id}
-                className={`rounded-[12px] bg-white border border-[#F1F5F9] p-5 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex flex-col gap-4 transition-all ${
+                onClick={() => handleCardClick(promo)}
+                className={`rounded-[12px] bg-white border border-[#F1F5F9] p-5 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex flex-col gap-4 cursor-pointer hover:border-slate-300 transition-all ${
                   promo.isExpired ? "opacity-75 bg-white/70" : ""
                 }`}
               >
@@ -377,7 +425,7 @@ export function PromotionsPage({ business }: PromotionsPageProps) {
                     {promo.actionText === "Duplicate" ? (
                       <button
                         type="button"
-                        onClick={() => handleActionClick(promo)}
+                        onClick={(e) => handleActionClick(e, promo)}
                         className="px-4 py-1.5 rounded-[6px] bg-[#DEE5D7] text-[#3F4A3A] text-[12px] font-semibold hover:bg-[#d0d8c8] active:scale-[0.98] transition-all"
                       >
                         Duplicate
@@ -385,7 +433,7 @@ export function PromotionsPage({ business }: PromotionsPageProps) {
                     ) : promo.actionText === "View Analytics" ? (
                       <button
                         type="button"
-                        onClick={() => handleActionClick(promo)}
+                        onClick={(e) => handleActionClick(e, promo)}
                         className="text-[12px] font-semibold text-[#006E08] hover:underline"
                       >
                         View Analytics
@@ -393,7 +441,7 @@ export function PromotionsPage({ business }: PromotionsPageProps) {
                     ) : (
                       <button
                         type="button"
-                        onClick={() => handleActionClick(promo)}
+                        onClick={(e) => handleActionClick(e, promo)}
                         className="text-[16px] font-semibold text-[#006E08] hover:underline flex items-center gap-1"
                       >
                         {promo.actionText}
@@ -406,6 +454,151 @@ export function PromotionsPage({ business }: PromotionsPageProps) {
           )}
         </div>
       </div>
+
+      {/* Promotion Details Modal */}
+      {selectedPromo && (
+        <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="w-full max-w-lg bg-white rounded-t-[24px] sm:rounded-[20px] max-h-[90vh] flex flex-col overflow-hidden shadow-2xl animate-in slide-in-from-bottom duration-200">
+            {/* Modal Header */}
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between shrink-0 bg-white">
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-10 h-10 rounded-[8px] flex items-center justify-center shrink-0"
+                  style={{ backgroundColor: selectedPromo.iconBgColor }}
+                >
+                  {renderIcon(selectedPromo.iconType, selectedPromo.iconColor)}
+                </div>
+                <div>
+                  <h3 className="text-[18px] font-bold text-[#0F172A] leading-tight">
+                    {selectedPromo.title}
+                  </h3>
+                  <p className="text-[13px] text-[#64748B]">{selectedPromo.type}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedPromo(null)}
+                className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-5 overflow-y-auto space-y-4 flex-1">
+              {/* Highlight Banner */}
+              <div className="p-4 rounded-[12px] bg-[#006E08]/[0.06] border border-[#006E08]/20 flex items-center justify-between">
+                <div>
+                  <span className="text-[12px] font-bold uppercase tracking-wider text-[#006E08]">
+                    Offer Value
+                  </span>
+                  <p className="text-[26px] font-extrabold text-[#006E08] tracking-tight">
+                    {selectedPromo.discountLabel}
+                  </p>
+                </div>
+                <div
+                  className="px-3 py-1 rounded-[6px] text-[12px] font-bold tracking-wide uppercase"
+                  style={{
+                    backgroundColor: selectedPromo.badgeBgColor,
+                    color: selectedPromo.badgeTextColor,
+                  }}
+                >
+                  {selectedPromo.status}
+                </div>
+              </div>
+
+              {/* Key Details Grid */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3.5 rounded-[10px] bg-[#F8FAFC] border border-slate-200">
+                  <span className="text-[12px] font-semibold text-slate-500 uppercase">
+                    Timeline
+                  </span>
+                  <p className="text-[14px] font-bold text-[#0F172A] mt-1">
+                    {selectedPromo.scheduleLabel}
+                  </p>
+                </div>
+                <div className="p-3.5 rounded-[10px] bg-[#F8FAFC] border border-slate-200">
+                  <span className="text-[12px] font-semibold text-slate-500 uppercase">
+                    Discount Type
+                  </span>
+                  <p className="text-[14px] font-bold text-[#0F172A] mt-1 capitalize">
+                    {selectedPromo.category} off
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-[12px] bg-[#F8FAFC] border border-slate-200 space-y-2.5">
+                <div className="flex items-center justify-between text-[14px]">
+                  <span className="text-slate-500 font-medium">Campaign ID</span>
+                  <span className="font-mono text-slate-700 font-semibold text-[13px]">{selectedPromo.id}</span>
+                </div>
+                <div className="flex items-center justify-between text-[14px]">
+                  <span className="text-slate-500 font-medium">Status</span>
+                  <span className="font-semibold text-slate-800">{selectedPromo.status}</span>
+                </div>
+                <div className="flex items-center justify-between text-[14px]">
+                  <span className="text-slate-500 font-medium">Target Scope</span>
+                  <span className="font-semibold text-slate-800">{selectedPromo.type}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Actions Footer - Sticky at bottom */}
+            <div className="p-4 border-t border-slate-200 flex items-center gap-3 bg-white shrink-0 shadow-[0_-4px_12px_rgba(0,0,0,0.05)] pb-6 sm:pb-4">
+              <button
+                type="button"
+                onClick={() => handleEditPromotion(selectedPromo)}
+                className="flex-1 h-12 rounded-[8px] bg-[#0F172A] hover:bg-slate-800 text-white font-bold text-[15px] flex items-center justify-center transition shadow-sm active:scale-[0.99]"
+              >
+                Edit Promotion
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDeleteClick(selectedPromo)}
+                className="h-12 px-5 rounded-[8px] bg-red-50 hover:bg-red-100 text-red-600 font-bold text-[15px] flex items-center justify-center transition active:scale-[0.99]"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Alert Modal */}
+      {promoToDelete && (
+        <div className="fixed inset-0 z-[10000] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="w-full max-w-sm bg-white rounded-[16px] p-5 space-y-4 shadow-xl animate-in zoom-in-95 duration-150">
+            <div className="space-y-1.5 text-center">
+              <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 mx-auto flex items-center justify-center text-xl font-bold">
+                ⚠️
+              </div>
+              <h3 className="text-[18px] font-bold text-[#0F172A]">
+                Delete Promotion?
+              </h3>
+              <p className="text-[14px] text-slate-500">
+                Are you sure you want to delete <span className="font-semibold text-slate-700">"{promoToDelete.title}"</span>? This action cannot be undone.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setPromoToDelete(null)}
+                className="flex-1 h-11 rounded-[8px] bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-[14px] transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                className="flex-1 h-11 rounded-[8px] bg-red-600 hover:bg-red-700 text-white font-bold text-[14px] transition shadow-sm"
+              >
+                Yes, Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
