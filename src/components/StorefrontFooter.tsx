@@ -37,9 +37,11 @@ function formatAddress(
   const parts = [
     address.buildingNo,
     address.street,
-    address.town || address.district,
+    address.town,
+    address.district,
     address.state,
     address.pincode,
+    address.country,
   ].filter(Boolean);
   return parts.join(", ");
 }
