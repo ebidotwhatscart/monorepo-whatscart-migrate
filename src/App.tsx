@@ -71,14 +71,13 @@ export default function App({
   const isMainHost = [publicRootDomain, `www.${publicRootDomain}`].includes(hostname);
   const tenantSlug = getTenantSlug(hostname);
   const isAdminDashboardPath = pathname.startsWith("/dashboard");
-  const isTenantRoot = Boolean(tenantSlug && pathname === "/");
 
   const content = (
     <>
       <ScrollToTop />
       <div className="min-h-screen flex flex-col bg-slate-200">
         <div className="flex-1 ">
-          {isTenantRoot ? <Storefront /> : <Routes>
+          <Routes>
             {isSuperAdminHost && !isAdminDashboardPath && <Route path="*" element={<SuperAdminPortal />} />}
             {isMainHost && isAdminDashboardPath && (
               <Route path="/dashboard/*" element={<RedirectToAppDashboard />} />
@@ -122,7 +121,7 @@ export default function App({
             <Route path="/order-success" element={<OrderSuccessPage />} />
             <Route path="/my-orders" element={<OrderHistoryPage />} />
             <Route path="/*" element={<MainApp />} />
-          </Routes>}
+          </Routes>
           <Toaster
             position="top-center"
             mobileOffset={{ top: "calc(3.5rem + 1rem)" }}
