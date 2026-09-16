@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useFirebaseQuery as useQuery } from "../lib/firebase/hooks";
 import {
@@ -13,7 +13,8 @@ import { useCart } from "../context/CartContext";
 import { createStorefrontTheme } from "../lib/storefrontTheme";
 import { getTenantSlug, storefrontPath } from "../lib/urls";
 import { useRuntimeHostname } from "../context/RuntimeLocationContext";
-import { evaluateCartCoupon } from "../lib/storefrontPromotions";
+import { staticAssetUrl } from "../lib/staticAsset";
+import { getAutoAppliedCoupon, evaluateCartCoupon } from "../lib/storefrontPromotions";
 import { toast } from "sonner";
 import headerCartUrl from "../assets/figma/storefront-header-cart.svg";
 import whatscartPoweredLogoUrl from "../assets/figma/whatscart-powered-logo.svg";
@@ -81,6 +82,31 @@ export function StoreCartPage() {
     return map;
   }, [products]);
 
+  const subtotal = getTotalPrice();
+  const couponResult = useMemo(() => {
+    if (!appliedCoupon) {
+      return {
+        hasCoupon: false,
+        discountAmount: 0,
+        finalTotal: subtotal,
+      };
+    }
+    return evaluateCartCoupon(appliedCoupon, subtotal, business?._id);
+  }, [appliedCoupon, subtotal, business?._id]);
+
+  // Auto-apply promotion coupon marked "apply by default"
+  useEffect(() => {
+    if (!business?._id || appliedCoupon) return;
+    const autoCode = getAutoAppliedCoupon(business._id);
+    if (!autoCode) return;
+    const result = evaluateCartCoupon(autoCode, getTotalPrice(), business._id);
+    if (result.hasCoupon) {
+      setAppliedCoupon(autoCode);
+      setCouponInput(autoCode);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [business?._id, appliedCoupon]);
+
   if (business === undefined) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#f9f9f9]">
@@ -103,18 +129,6 @@ export function StoreCartPage() {
       </div>
     );
   }
-
-  const subtotal = getTotalPrice();
-  const couponResult = useMemo(() => {
-    if (!appliedCoupon) {
-      return {
-        hasCoupon: false,
-        discountAmount: 0,
-        finalTotal: subtotal,
-      };
-    }
-    return evaluateCartCoupon(appliedCoupon, subtotal, business?._id);
-  }, [appliedCoupon, subtotal, business?._id]);
 
   const handleApplyCoupon = () => {
     if (!couponInput.trim()) {
@@ -460,7 +474,7 @@ export function StoreCartPage() {
           <span>Powered by</span>
           <span className="flex items-center gap-[10px]">
             <img
-              src={whatscartPoweredLogoUrl}
+              src={staticAssetUrl(whatscartPoweredLogoUrl)}
               alt="Whatscart logo"
               className="h-7 w-[22px]"
             />

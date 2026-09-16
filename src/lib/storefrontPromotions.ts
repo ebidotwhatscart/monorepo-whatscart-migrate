@@ -11,9 +11,21 @@ export interface StoredPromotion {
   couponCode?: string;
   totalUsageLimit?: string;
   minOrderValue?: string;
+  applyByDefault?: boolean;
+  applyToDiscounted?: boolean;
+  startDate?: string;
+  endDate?: string;
   selectedProductIds?: string[];
   selectedCategoryIds?: string[];
   createdAt?: number;
+}
+
+function isWithinTimeFrame(promo: StoredPromotion): boolean {
+  const now = new Date();
+  const today = now.toISOString().slice(0, 10);
+  if (promo.startDate && today < promo.startDate) return false;
+  if (promo.endDate && today > promo.endDate) return false;
+  return true;
 }
 
 export function getActivePromotions(businessId?: string): StoredPromotion[] {
@@ -24,12 +36,22 @@ export function getActivePromotions(businessId?: string): StoredPromotion[] {
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed)) {
-      return parsed.filter((p) => p.status === "ACTIVE");
+      return parsed.filter(
+        (p) => p.status === "ACTIVE" && isWithinTimeFrame(p),
+      );
     }
   } catch {
     // ignore
   }
   return [];
+}
+
+export function getAutoAppliedCoupon(businessId?: string): string | null {
+  const promotions = getActivePromotions(businessId);
+  const autoPromo = promotions.find(
+    (p) => p.applyTo === "cart" && p.applyByDefault && p.couponCode,
+  );
+  return autoPromo?.couponCode?.trim().toUpperCase() ?? null;
 }
 
 export interface ProductDiscountResult {

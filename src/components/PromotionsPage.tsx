@@ -46,6 +46,14 @@ export interface PromotionItem {
   actionText: string;
   isExpired?: boolean;
   createdAt?: number;
+  couponCode?: string;
+  minOrderValue?: string;
+  totalUsageLimit?: string;
+  applyTo?: "cart" | "products" | "categories";
+  applyToDiscounted?: boolean;
+  applyByDefault?: boolean;
+  startDate?: string;
+  endDate?: string;
 }
 
 const DEFAULT_PROMOTIONS: PromotionItem[] = [
@@ -65,7 +73,28 @@ export function PromotionsPage({ business }: PromotionsPageProps) {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          setPromotions([...parsed, ...DEFAULT_PROMOTIONS]);
+          const today = new Date();
+          const todayStr = today.toISOString().slice(0, 10);
+          let changed = false;
+          const normalized = parsed.map((p: any) => {
+            if (
+              p.status === "ACTIVE" &&
+              p.endDate &&
+              todayStr > p.endDate
+            ) {
+              changed = true;
+              return { ...p, status: "EXPIRED", isExpired: true };
+            }
+            if (p.endDate && todayStr > p.endDate) {
+              changed = true;
+              return { ...p, isExpired: true };
+            }
+            return p;
+          });
+          if (changed) {
+            localStorage.setItem(storageKey, JSON.stringify(normalized));
+          }
+          setPromotions([...normalized, ...DEFAULT_PROMOTIONS]);
           return;
         }
       }
@@ -149,6 +178,27 @@ export function PromotionsPage({ business }: PromotionsPageProps) {
     setPromoToDelete(promo);
   };
 
+  const handleToggleApplyByDefault = (promo: PromotionItem) => {
+    const next = !promo.applyByDefault;
+    setPromotions((prev) =>
+      prev.map((p) => (p.id === promo.id ? { ...p, applyByDefault: next } : p)),
+    );
+    if (selectedPromo?.id === promo.id) {
+      setSelectedPromo({ ...promo, applyByDefault: next });
+    }
+    try {
+      const storageKey = `whatscart_promotions_${business._id}`;
+      const existing = JSON.parse(localStorage.getItem(storageKey) || "[]");
+      const updated = existing.map((p: any) =>
+        p.id === promo.id ? { ...p, applyByDefault: next } : p,
+      );
+      localStorage.setItem(storageKey, JSON.stringify(updated));
+    } catch {
+      // ignore
+    }
+    toast.success(next ? `"${promo.title}" will be applied by default at checkout.` : `"${promo.title}" no longer auto-applies.`);
+  };
+
   const handleConfirmDelete = () => {
     if (!promoToDelete) return;
     const targetId = promoToDelete.id;
@@ -220,6 +270,17 @@ export function PromotionsPage({ business }: PromotionsPageProps) {
       return <Layers className="w-3.5 h-3.5 text-[#3F4A3A]" />;
     }
     return <Calendar className="w-3.5 h-3.5 text-[#3F4A3A]" />;
+  };
+
+  const formatDate = (dateStr?: string) => {
+    if (!dateStr) return undefined;
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return undefined;
+    return d.toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
   };
 
   return (
@@ -461,6 +522,20 @@ export function PromotionsPage({ business }: PromotionsPageProps) {
                   <p className="text-[14px] font-bold text-[#0F172A] mt-1">
                     {selectedPromo.scheduleLabel}
                   </p>
+                  {formatDate(selectedPromo.startDate) && (
+                    <p className="text-[12px] text-slate-500 mt-0.5">
+                      From {formatDate(selectedPromo.startDate)}
+                    </p>
+                  )}
+                  {selectedPromo.endDate ? (
+                    <p className="text-[12px] text-slate-500 mt-0.5">
+                      Until {formatDate(selectedPromo.endDate)}
+                    </p>
+                  ) : (
+                    <p className="text-[12px] text-[#006E08] font-medium mt-0.5">
+                      No end date (runs until disabled)
+                    </p>
+                  )}
                 </div>
                 <div className="p-3.5 rounded-[10px] bg-[#F8FAFC] border border-slate-200">
                   <span className="text-[12px] font-semibold text-slate-500 uppercase">
@@ -472,6 +547,34 @@ export function PromotionsPage({ business }: PromotionsPageProps) {
                 </div>
               </div>
 
+              {/* Coupon Code Ticket */}
+              {selectedPromo.couponCode && (
+                <div className="rounded-[12px] border-2 border-dashed border-[#3DAC35]/40 bg-[#3DAC35]/[0.04] p-4 flex items-center justify-between gap-3">
+                  <div>
+                    <span className="text-[12px] font-bold uppercase tracking-wider text-[#3DAC35]">
+                      Coupon Code
+                    </span>
+                    <p className="text-[20px] font-extrabold tracking-widest text-[#0F172A] mt-0.5">
+                      {selectedPromo.couponCode}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleToggleApplyByDefault(selectedPromo)}
+                    className={`shrink-0 px-3 py-1.5 rounded-[6px] text-[11px] font-bold uppercase tracking-wider transition ${
+                      selectedPromo.applyByDefault
+                        ? "bg-[#006E08] text-white"
+                        : "bg-white border border-[#006E08]/30 text-[#006E08] hover:bg-[#006E08]/10"
+                    }`}
+                  >
+                    {selectedPromo.applyByDefault
+                      ? "Auto-applied"
+                      : "Apply by default"}
+                  </button>
+                </div>
+              )}
+
+              {/* Conditions & Restrictions */}
               <div className="p-4 rounded-[12px] bg-[#F8FAFC] border border-slate-200 space-y-2.5">
                 <div className="flex items-center justify-between text-[14px]">
                   <span className="text-slate-500 font-medium">Campaign ID</span>
@@ -485,7 +588,41 @@ export function PromotionsPage({ business }: PromotionsPageProps) {
                   <span className="text-slate-500 font-medium">Target Scope</span>
                   <span className="font-semibold text-slate-800">{selectedPromo.type}</span>
                 </div>
+                {selectedPromo.applyTo === "cart" && selectedPromo.applyToDiscounted !== undefined && (
+                  <div className="flex items-center justify-between text-[14px]">
+                    <span className="text-slate-500 font-medium">Applies to discounted products</span>
+                    <span className="font-semibold text-slate-800">
+                      {selectedPromo.applyToDiscounted ? "Yes" : "No"}
+                    </span>
+                  </div>
+                )}
+                {selectedPromo.totalUsageLimit && (
+                  <div className="flex items-center justify-between text-[14px]">
+                    <span className="text-slate-500 font-medium">Total usage limit</span>
+                    <span className="font-semibold text-slate-800">{selectedPromo.totalUsageLimit}</span>
+                  </div>
+                )}
               </div>
+
+              {/* Order Conditions */}
+              {(selectedPromo.minOrderValue || (selectedPromo.applyByDefault && selectedPromo.couponCode)) && (
+                <div className="p-4 rounded-[12px] bg-[#006E08]/[0.04] border border-[#006E08]/15 space-y-2.5">
+                  {selectedPromo.minOrderValue && (
+                    <div className="flex items-center justify-between text-[14px]">
+                      <span className="text-slate-500 font-medium">Min order value</span>
+                      <span className="font-semibold text-slate-800">
+                        ₹{Number(selectedPromo.minOrderValue).toLocaleString("en-IN")}
+                      </span>
+                    </div>
+                  )}
+                  {selectedPromo.applyByDefault && selectedPromo.couponCode && (
+                    <div className="flex items-center justify-between text-[14px]">
+                      <span className="text-slate-500 font-medium">Apply by default</span>
+                      <span className="font-semibold text-[#006E08]">Enabled</span>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Modal Actions Footer - Sticky at bottom */}
