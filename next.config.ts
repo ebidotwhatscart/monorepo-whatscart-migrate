@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-   async rewrites() {
+  allowedDevOrigins: ['app.lvh.me', 'admin.lvh.me', '*.lvh.me'],
+  async rewrites() {
     return [
       {
         source: '/firebase-media/:path*',

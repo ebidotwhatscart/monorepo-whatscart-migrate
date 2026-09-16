@@ -6,7 +6,8 @@ import {
   Package,
   User,
 } from "lucide-react";
-import whatscartPoweredLogoUrl from "../assets/figma/whatscart-powered-logo.svg";
+import { CouponIcon } from "./promotions/PromotionIcons";
+import { PoweredByWhatsCartPill } from "./PoweredByWhatsCartPill";
 
 const ADMIN_ACCENT = "#3DAC35";
 
@@ -36,12 +37,14 @@ export function BusinessLayout({ children, business }: BusinessLayoutProps) {
     if (p.includes("/products/collections/edit/")) return true;
     if (p.startsWith("/dashboard/orders/") && p.length > "/dashboard/orders/".length) return true;
     if (p === "/dashboard/products" && s.includes("action=create")) return true;
+    if (p === "/dashboard/promotions/create") return true;
     return false;
   })();
 
   const getActiveTab = () => {
     if (location.pathname.includes("/products")) return "products";
     if (location.pathname.includes("/orders")) return "orders";
+    if (location.pathname.includes("/promotions")) return "promotions";
     if (location.pathname.includes("/profile")) return "profile";
     return "dashboard";
   };
@@ -61,6 +64,12 @@ export function BusinessLayout({ children, business }: BusinessLayoutProps) {
       icon: ClipboardList,
       to: "/dashboard/orders",
     },
+    {
+      id: "promotions",
+      label: "Promotions",
+      icon: CouponIcon,
+      to: "/dashboard/promotions",
+    },
     { id: "profile", label: "Profile", icon: User, to: "/dashboard/profile" },
   ] as const;
 
@@ -76,7 +85,7 @@ export function BusinessLayout({ children, business }: BusinessLayoutProps) {
 
       {!hideBottomNav && (
         <nav className="fixed bottom-0 z-50 border-t border-slate-200 bg-white w-[428px] max-w-full left-1/2 -translate-x-1/2">
-          <div className="grid grid-cols-4 px-1 py-4">
+          <div className="grid grid-cols-5 px-1 py-3">
               {navItems.map(({ id, label, icon: Icon, to }) => {
                 const isActive = activeTab === id;
 
@@ -84,16 +93,17 @@ export function BusinessLayout({ children, business }: BusinessLayoutProps) {
                   <Link
                     key={id}
                     to={to}
-                    className="flex flex-col items-center justify-center gap-3 px-2 py-2 transition"
+                    className="flex flex-col items-center justify-center gap-1.5 px-1 py-1.5 transition"
                   >
                     <Icon
-                      className="h-8 w-6 stroke-[2.1]"
+                      className="h-6 w-6 stroke-[2.1]"
                       style={{
                         color: isActive ? ADMIN_ACCENT : "#64748B",
                       }}
+                      color={isActive ? ADMIN_ACCENT : "#64748B"}
                     />
                     <span
-                      className="text-[12px] font-semibold tracking-[0.08em]"
+                      className="text-[10.5px] font-semibold tracking-[0.04em] truncate max-w-full"
                       style={{
                         color: isActive ? ADMIN_ACCENT : "#64748B",
                       }}
@@ -107,24 +117,5 @@ export function BusinessLayout({ children, business }: BusinessLayoutProps) {
         </nav>
       )}
     </div>
-  );
-}
-
-function PoweredByWhatsCartPill() {
-  return (
-    <a href="https://whatscart.in/" aria-label="Powered by WhatsCart" className="relative block h-14 w-[253px] overflow-hidden rounded-[10px] bg-black">
-      <div className="absolute -left-1 -top-8 h-32 w-32 rounded-full bg-[#033500] blur-[31px]" />
-      <div className="relative flex h-full items-center gap-3 px-5 text-base font-medium text-[#fafafa]">
-        <span>Powered by</span>
-        <span className="flex items-center gap-2">
-          <img
-            src={whatscartPoweredLogoUrl}
-            alt="Whatscart logo"
-            className="h-7 w-[22px]"
-          />
-          Whatscart
-        </span>
-      </div>
-    </a>
   );
 }

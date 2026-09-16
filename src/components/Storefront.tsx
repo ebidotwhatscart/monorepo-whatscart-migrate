@@ -31,11 +31,12 @@ import { StorefrontHeader } from "./StorefrontHeader";
 import { StorefrontNotFound } from "./StorefrontNotFound";
 import storefrontWebFilterUrl from "../assets/figma/storefront-web-filter.svg";
 import storefrontWebSortUrl from "../assets/figma/storefront-web-sort.svg";
-import whatscartPoweredLogoUrl from "../assets/figma/whatscart-powered-logo.svg";
 import whatsappLogoUrl from "../assets/figma/whatsapp-logo.svg";
 import { getTenantSlug, productSlug, storefrontPath } from "../lib/urls";
 import { useRuntimeHostname } from "../context/RuntimeLocationContext";
 import { staticAssetUrl } from "../lib/staticAsset";
+import { calculateProductDiscount } from "../lib/storefrontPromotions";
+import { PoweredByWhatsCartPill } from "./PoweredByWhatsCartPill";
 
 type PublicProduct = {
   _id: Id<"products">;
@@ -497,24 +498,7 @@ export function Storefront() {
   );
 }
 
-function PoweredByWhatsCartPill() {
-  return (
-    <a href="https://whatscart.in/" className="relative block h-14 w-[253px] overflow-hidden rounded-[10px] bg-black">
-      <div className="absolute -left-1 -top-8 h-32 w-32 rounded-full bg-[#033500] blur-[31px]" />
-      <div className="relative flex h-full items-center gap-3 px-5 text-base font-medium text-[#fafafa]">
-        <span>Powered by</span>
-        <span className="flex items-center gap-2">
-          <img
-            src={staticAssetUrl(whatscartPoweredLogoUrl)}
-            alt="Whatscart logo"
-            className="h-7 w-[22px]"
-          />
-          Whatscart
-        </span>
-      </div>
-    </a>
-  );
-}
+
 
 function DesktopCollectionNav({
   categories,
@@ -990,11 +974,17 @@ function ProductTile({
 }) {
   const imageUrl = productImage(product);
   const chips = getProductMetaChips(businessType, product.productTypeDetails);
+  const discountInfo = calculateProductDiscount(
+    product._id,
+    product.categoryId,
+    product.price,
+    product.businessId,
+  );
 
   return (
     <>
       <div
-        className="flex aspect-square items-center justify-center overflow-hidden rounded-[12px] lg:rounded-[12px]"
+        className="relative flex aspect-square items-center justify-center overflow-hidden rounded-[12px] lg:rounded-[12px]"
         style={{ backgroundColor: storefrontTheme.surfaceStrong }}
       >
         {imageUrl ? (
@@ -1007,6 +997,12 @@ function ProductTile({
         ) : (
           <Store className="h-8 w-8 text-[#777]" aria-hidden="true" />
         )}
+
+        {discountInfo.hasDiscount && discountInfo.discountBadge && (
+          <span className="absolute top-2 left-2 rounded-full bg-[#006E08] px-2 py-0.5 text-[10px] font-bold text-white shadow-sm">
+            {discountInfo.discountBadge}
+          </span>
+        )}
       </div>
       <p
         className="mt-3 line-clamp-2 text-[15px] font-semibold leading-5 lg:mt-4 lg:text-lg lg:font-bold lg:leading-7"
@@ -1014,12 +1010,20 @@ function ProductTile({
       >
         {product.name}
       </p>
-      <p
-        className="mt-1 text-sm font-semibold lg:text-base lg:font-medium lg:leading-6"
-        style={{ color: storefrontTheme.textPrimary }}
-      >
-        {formatPrice(product.price)}
-      </p>
+      <div className="mt-1 flex items-baseline gap-2">
+        <p
+          className="text-sm font-bold lg:text-base lg:font-bold lg:leading-6 text-[#006E08]"
+        >
+          {formatPrice(discountInfo.discountedPrice)}
+        </p>
+        {discountInfo.hasDiscount && (
+          <p
+            className="text-xs text-slate-400 line-through font-normal"
+          >
+            {formatPrice(discountInfo.originalPrice)}
+          </p>
+        )}
+      </div>
       <div className="mt-2 flex min-h-[24px] flex-wrap gap-1">
         {chips.map((chip) => (
           <span

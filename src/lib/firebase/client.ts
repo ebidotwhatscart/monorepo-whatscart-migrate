@@ -12,9 +12,17 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
+let cachedClient: {
+  app: ReturnType<typeof initializeApp>;
+  auth: ReturnType<typeof getAuth>;
+  firestore: ReturnType<typeof getFirestore>;
+  storage: ReturnType<typeof getStorage>;
+} | null = null;
+
 let emulatorsConnected = false;
 
 export function getFirebaseClient() {
+  if (cachedClient) return cachedClient;
   if (!firebaseConfig.apiKey || !firebaseConfig.projectId) return null;
   const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
   const client = {
@@ -37,5 +45,6 @@ export function getFirebaseClient() {
     emulatorsConnected = true;
   }
 
+  cachedClient = client;
   return client;
 }

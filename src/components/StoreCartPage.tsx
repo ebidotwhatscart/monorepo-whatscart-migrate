@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useFirebaseQuery as useQuery } from "../lib/firebase/hooks";
 import {
@@ -13,11 +13,15 @@ import { useCart } from "../context/CartContext";
 import { createStorefrontTheme } from "../lib/storefrontTheme";
 import { getTenantSlug, storefrontPath } from "../lib/urls";
 import { useRuntimeHostname } from "../context/RuntimeLocationContext";
+import { staticAssetUrl } from "../lib/staticAsset";
+import { getAutoAppliedCoupon, evaluateCartCoupon } from "../lib/storefrontPromotions";
+import { toast } from "sonner";
 import headerCartUrl from "../assets/figma/storefront-header-cart.svg";
 import whatscartPoweredLogoUrl from "../assets/figma/whatscart-powered-logo.svg";
 
 type PublicProduct = {
   _id: string;
+  price?: number;
   imageUrls?: (string | null)[];
 };
 
@@ -36,6 +40,8 @@ export function StoreCartPage() {
   const runtimeHostname = useRuntimeHostname();
   const slug = routeSlug ?? getTenantSlug(runtimeHostname);
   const navigate = useNavigate();
+  const [couponInput, setCouponInput] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
   const [customerName, setCustomerName] = useState("");
   const [customerMobile, setCustomerMobile] = useState("");
   const [customerAddress, setCustomerAddress] = useState("");
@@ -66,6 +72,41 @@ export function StoreCartPage() {
     return map;
   }, [products]);
 
+  const originalPriceMap = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const product of products ?? []) {
+      if (typeof product.price === "number") {
+        map.set(product._id, product.price);
+      }
+    }
+    return map;
+  }, [products]);
+
+  const subtotal = getTotalPrice();
+  const couponResult = useMemo(() => {
+    if (!appliedCoupon) {
+      return {
+        hasCoupon: false,
+        discountAmount: 0,
+        finalTotal: subtotal,
+      };
+    }
+    return evaluateCartCoupon(appliedCoupon, subtotal, business?._id);
+  }, [appliedCoupon, subtotal, business?._id]);
+
+  // Auto-apply promotion coupon marked "apply by default"
+  useEffect(() => {
+    if (!business?._id || appliedCoupon) return;
+    const autoCode = getAutoAppliedCoupon(business._id);
+    if (!autoCode) return;
+    const result = evaluateCartCoupon(autoCode, getTotalPrice(), business._id);
+    if (result.hasCoupon) {
+      setAppliedCoupon(autoCode);
+      setCouponInput(autoCode);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [business?._id, appliedCoupon]);
+
   if (business === undefined) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#f9f9f9]">
@@ -89,8 +130,33 @@ export function StoreCartPage() {
     );
   }
 
+  const handleApplyCoupon = () => {
+    if (!couponInput.trim()) {
+      toast.error("Please enter a coupon code");
+      return;
+    }
+    const result = evaluateCartCoupon(couponInput, subtotal, business?._id);
+    if (result.error) {
+      toast.error(result.error);
+      return;
+    }
+    if (result.hasCoupon) {
+      setAppliedCoupon(couponInput.trim().toUpperCase());
+      toast.success(`Coupon "${couponInput.trim().toUpperCase()}" applied!`);
+    } else {
+      toast.error("Invalid coupon code");
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponInput("");
+    toast.info("Coupon removed");
+  };
+
   const handlePlaceOrder = () => {
-    navigate(`/checkout?source=cart&slug=${business.slug}`);
+    const couponQuery = appliedCoupon ? `&coupon=${encodeURIComponent(appliedCoupon)}` : "";
+    navigate(`/checkout?source=cart&slug=${business.slug}${couponQuery}`);
   };
 
   return (
@@ -196,12 +262,19 @@ export function StoreCartPage() {
                         >
                           {item.name}
                         </h3>
-                        <p
-                          className="shrink-0 text-right text-sm font-semibold leading-7"
-                          style={{ color: storefrontTheme.textPrimary }}
-                        >
-                          {formatPrice(item.price)}
-                        </p>
+                        <div className="shrink-0 text-right">
+                          <p
+                            className="text-sm font-semibold leading-5"
+                            style={{ color: (originalPriceMap.get(item.productId) ?? 0) > item.price ? "#006E08" : storefrontTheme.textPrimary }}
+                          >
+                            {formatPrice(item.price)}
+                          </p>
+                          {(originalPriceMap.get(item.productId) ?? 0) > item.price && (
+                            <p className="text-xs text-slate-400 line-through font-normal">
+                              {formatPrice(originalPriceMap.get(item.productId)!)}
+                            </p>
+                          )}
+                        </div>
                       </div>
                       {item.customizationLines?.length ? (
                         <ul className="mt-2 list-disc space-y-1 pl-4 text-xs text-[#5a6061]">
@@ -261,6 +334,72 @@ export function StoreCartPage() {
           )}
         </section>
 
+        {/* Coupon Code Section */}
+        {items.length > 0 && (
+          <section
+            className="rounded-2xl border p-4 shadow-[0_24px_48px_rgba(45,52,53,0.06)]"
+            style={{
+              borderColor: storefrontTheme.border,
+              backgroundColor: storefrontTheme.surface,
+            }}
+          >
+            <div className="space-y-2">
+              <label
+                className="text-sm font-semibold leading-5"
+                style={{ color: storefrontTheme.textPrimary }}
+              >
+                Have a coupon?
+              </label>
+
+              {appliedCoupon ? (
+                <div className="flex items-center justify-between rounded-lg bg-[#006E08]/10 border border-[#006E08]/30 px-3 py-2.5">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono font-bold text-[#006E08] text-sm tracking-wider">
+                      {appliedCoupon}
+                    </span>
+                    <span className="text-xs text-[#006E08] font-semibold">
+                      (Saved {formatPrice(couponResult.discountAmount)})
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleRemoveCoupon}
+                    className="text-xs font-bold text-red-500 hover:text-red-700"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={couponInput}
+                    onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                    placeholder="Enter coupon code"
+                    className="flex-1 h-11 rounded-lg border px-3 text-sm font-medium uppercase tracking-wider outline-none"
+                    style={{
+                      borderColor: storefrontTheme.border,
+                      backgroundColor: storefrontTheme.background,
+                      color: storefrontTheme.textPrimary,
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleApplyCoupon}
+                    className="px-4 h-11 rounded-lg text-sm font-bold shadow-sm"
+                    style={{
+                      backgroundColor: storefrontTheme.ctaBackground,
+                      color: storefrontTheme.ctaText,
+                    }}
+                  >
+                    Apply
+                  </button>
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+
         <section
           className="rounded-2xl border p-6 shadow-[0_24px_48px_rgba(45,52,53,0.06)]"
           style={{
@@ -271,8 +410,16 @@ export function StoreCartPage() {
           <div className="space-y-4">
             <div className="flex items-center justify-between text-base leading-6">
               <span>Subtotal</span>
-              <span>{formatPrice(getTotalPrice())}</span>
+              <span>{formatPrice(subtotal)}</span>
             </div>
+
+            {couponResult.hasCoupon && couponResult.discountAmount > 0 && (
+              <div className="flex items-center justify-between text-base leading-6 text-[#006E08] font-semibold">
+                <span>Coupon Discount ({appliedCoupon})</span>
+                <span>-{formatPrice(couponResult.discountAmount)}</span>
+              </div>
+            )}
+
             <div className="flex items-center justify-between text-base leading-6">
               <span>Shipping</span>
               <span>Calculated on WhatsApp</span>
@@ -281,10 +428,9 @@ export function StoreCartPage() {
               <div className="flex items-baseline justify-between">
                 <span className="text-lg font-black leading-7">Total</span>
                 <span
-                  className="text-lg font-bold leading-8"
-                  style={{ color: storefrontTheme.textPrimary }}
+                  className="text-lg font-bold leading-8 text-[#006E08]"
                 >
-                  {formatPrice(getTotalPrice())}
+                  {formatPrice(couponResult.finalTotal)}
                 </span>
               </div>
             </div>
@@ -328,7 +474,7 @@ export function StoreCartPage() {
           <span>Powered by</span>
           <span className="flex items-center gap-[10px]">
             <img
-              src={whatscartPoweredLogoUrl}
+              src={staticAssetUrl(whatscartPoweredLogoUrl)}
               alt="Whatscart logo"
               className="h-7 w-[22px]"
             />
