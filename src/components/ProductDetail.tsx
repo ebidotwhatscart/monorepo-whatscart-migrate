@@ -145,10 +145,17 @@ export function ProductDetail() {
     brandPalette: business?.brandPalette,
   });
 
+  const lastSlugParamRef = useRef(productSlugParam);
   useEffect(() => {
     if (product && slug && productSlugParam) {
       const canonicalSlug = productSlug(product.name, product._id, product.slug);
-      if (canonicalSlug !== productSlugParam) {
+      const lastParam = lastSlugParamRef.current;
+      lastSlugParamRef.current = productSlugParam;
+      // During client-side navigation the resolver result for the previous URL
+      // can still be mounted while the query for the new param is in flight.
+      // If the canonical target equals the previous param, `product` belongs to
+      // the old URL; redirecting would bounce back to the page we just left.
+      if (canonicalSlug !== productSlugParam && canonicalSlug !== lastParam) {
         navigate(storefrontPath(slug, `products/${canonicalSlug}`), { replace: true });
       }
     }
