@@ -23,3 +23,4 @@ bubblewrap/local.properties
 !.env.example
 .vercel
 .env*
+.opencode/
