@@ -478,7 +478,7 @@ export function CheckoutPage() {
           price: item.price,
           customizationNotes: item.customizationNotes,
         })),
-        totalAmount,
+        totalAmount: rawSubtotal,
       });
 
       // Clear cart if checkout was from cart
