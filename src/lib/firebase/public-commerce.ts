@@ -321,7 +321,7 @@ export async function createPublicOrder(
     );
   });
 
-  return { accessToken: orderAccessToken, order: orderRef.id, orderId };
+  return { accessToken: orderAccessToken, order: orderRef.id, orderId, totalAmount: finalTotalAmount };
 }
 
 export async function savePublicCart(

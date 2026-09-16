@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { getAdminFirestore } from "@/lib/firebase/admin";
+import { notifyNewOrder } from "@/lib/firebase/notifications";
 import {
   accessTokenMatches,
   createPublicOrder,
@@ -24,11 +25,25 @@ export async function POST(request: NextRequest) {
     );
   }
   try {
+    const rawBody = await request.json();
+    const businessId =
+      typeof rawBody === "object" && rawBody !== null && "businessId" in rawBody
+        ? String(rawBody.businessId)
+        : "";
     const result = await createPublicOrder(
       firestore,
-      await request.json(),
+      rawBody,
       request.headers.get("x-customer-access-token"),
     );
+    if (businessId) {
+      await notifyNewOrder(firestore, businessId, {
+        orderId: result.order,
+        orderNumber: result.orderId,
+        totalAmount: result.totalAmount,
+      }).catch((error) => {
+        console.error("Failed to notify store owner:", error);
+      });
+    }
     return NextResponse.json(result, { headers: noStoreHeaders });
   } catch (error) {
     return NextResponse.json(
