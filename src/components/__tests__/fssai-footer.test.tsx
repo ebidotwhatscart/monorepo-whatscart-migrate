@@ -47,4 +47,33 @@ describe("StorefrontFooter FSSAI License & Certificate", () => {
 
     expect(screen.queryByText(/FSSAI Lic/i)).not.toBeInTheDocument();
   });
+
+  test("renders full address with town, district, and country", () => {
+    const business = {
+      name: "Sweet Bakes",
+      slug: "sweet-bakes",
+      whatsappPhone: "919876543210",
+      address: {
+        buildingNo: "7/53",
+        street: "Vgp prem nagar",
+        town: "Mgr nagar keeranatham",
+        district: "Coimbatore",
+        pincode: "641035",
+        state: "Tamil Nadu",
+        country: "India",
+      },
+    };
+
+    render(
+      <StorefrontFooter
+        business={business}
+        categories={[]}
+        storefrontTheme={mockTheme}
+      />
+    );
+
+    expect(
+      screen.getByText("7/53, Vgp prem nagar, Mgr nagar keeranatham, Coimbatore, Tamil Nadu, 641035, India")
+    ).toBeInTheDocument();
+  });
 });

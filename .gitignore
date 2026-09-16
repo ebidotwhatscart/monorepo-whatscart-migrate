@@ -23,6 +23,4 @@ bubblewrap/local.properties
 !.env.example
 .vercel
 .env*
-.opencode/opencode-loop/ses_f55eae487ffe4MVHByp9GSyMAY.json
-.opencode/opencode-loop/ses_f551fd7feffefxtGYDw7J3bxZm.json
-.opencode/opencode-loop/ses_f5523c29fffewDWBhJYfZYxO4V.json
+.opencode/
