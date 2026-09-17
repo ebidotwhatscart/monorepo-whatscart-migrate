@@ -824,7 +824,7 @@ export function StoreSettings({ business, showHeader = true }: StoreSettingsProp
             <div className="space-y-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <label className="text-sm font-semibold text-slate-800">
+                  <label htmlFor="brand-primary-color-input" className="text-sm font-semibold text-slate-800">
                     Brand primary color
                   </label>
                   
@@ -846,15 +846,21 @@ export function StoreSettings({ business, showHeader = true }: StoreSettingsProp
                   <div className="flex items-center gap-1 overflow-hidden rounded-lg border border-slate-200 px-3 py-2">
                     <span className="text-xs font-medium text-slate-400">#</span>
                     <input
+                      id="brand-primary-color-input"
                       type="text"
                       value={draftSeedColor.replace("#", "")}
                       onChange={(e) => {
                         const raw = e.target.value.replace(/[^0-9a-fA-F]/g, "").slice(0, 6);
-                        if (raw) setDraftSeedColor(`#${raw}`);
+                        if (raw) {
+                          const next = `#${raw}`;
+                          setDraftSeedColor(next);
+                          if (raw.length === 6) handleSeedColorChange(next);
+                        }
                       }}
                       className="w-20 border-0 p-0 text-sm font-semibold text-slate-900 outline-none"
                       maxLength={6}
                     />
+                    <span className="sr-only">{draftSeedColor}</span>
                   </div>
                 </div>
                 {showColorPicker && (
@@ -911,6 +917,13 @@ export function StoreSettings({ business, showHeader = true }: StoreSettingsProp
                   <Zap className="h-4 w-4" />
                   Refresh palette
                 </button>
+              <button
+                type="button"
+                onClick={() => triggerAutoSave()}
+                className="inline-flex w-full items-center justify-center rounded-lg bg-gray-900 px-3 py-2 text-sm font-semibold text-white"
+              >
+                Save Changes
+              </button>
 
               {isGeneratingPalettes ? (
                 <p

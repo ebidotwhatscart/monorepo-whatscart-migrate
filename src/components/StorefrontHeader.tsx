@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { ShoppingCart, X } from "lucide-react";
+import { X } from "lucide-react";
 import type { StorefrontTheme } from "../lib/storefrontTheme";
 import headerMenuUrl from "../assets/figma/storefront-header-menu.svg";
 import storefrontWebSearchIconUrl from "../assets/figma/storefront-web-search-icon.svg";
 import backButtonUrl from "../assets/figma/back-button.svg";
+import headerCartUrl from "../assets/figma/storefront-header-cart.svg";
 import { storefrontPath } from "../lib/urls";
 import { useRuntimeHostname } from "../context/RuntimeLocationContext";
 import { staticAssetUrl } from "../lib/staticAsset";
@@ -115,11 +116,14 @@ function CategorySidebar({
             className="absolute left-[33px] top-[35px] flex h-8 w-[160px] "
           >
             {businessLogoUrl ? (
-              <img
-                src={businessLogoUrl}
-                alt={businessName}
-                className="h-12 w-auto max-w-[130px] object-contain"
-              />
+              <>
+                <span className="sr-only">{businessName}</span>
+                <img
+                  src={businessLogoUrl}
+                  alt={businessName}
+                  className="h-12 w-auto max-w-[130px] object-contain"
+                />
+              </>
             ) : (
               <span className="truncate text-sm font-semibold">
                 {businessName}
@@ -159,6 +163,7 @@ function CategorySidebar({
               to="/"
               className="flex items-center gap-3 text-sm text-[#5A6061]"
             >
+              <span className="sr-only">Powered by</span>
               <img
                 src="http://localhost:5173/src/assets/figma/whatscart-powered-logo.svg"
                 alt="Whatscart logo"
@@ -239,11 +244,13 @@ export function StorefrontHeader({
 
             <Link
               to={storefrontPath(slug, "", runtimeHostname)}
+              aria-label={business.name}
               className="mx-auto flex h-10 min-w-0 max-w-[190px] items-center justify-center rounded-full px-4 lg:mx-0 lg:h-11 lg:max-w-[220px] lg:px-4"
                style={{ color: storefrontTheme.textPrimary }}
             >
               {business.logoUrl ? (
                 <div className="flex flex-col items-center">
+                  <span className="sr-only">{business.name}</span>
                   <img
                     src={business.logoUrl}
                     alt={business.name}
@@ -275,7 +282,7 @@ export function StorefrontHeader({
               className="relative flex h-10 w-16 items-center justify-end lg:hidden"
               aria-label="Open cart"
             >
-              <ShoppingCart className="h-auto w-5 lg:h-6 lg:w-6" aria-hidden="true" />
+              <img src={staticAssetUrl(headerCartUrl)} alt="Cart" className="h-auto w-5 lg:h-6 lg:w-6" />
               {getTotalItems() > 0 && (
                 <span
                   className="absolute right-0 top-0 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-semibold"
@@ -353,10 +360,10 @@ export function StorefrontHeader({
               <button
                 type="button"
                 onClick={onCartClick}
-                className="relative flex h-12 min-w-[56px] items-center justify-center rounded-2xl border border-[#ebe7e4] bg-white px-4 shadow-sm transition hover:bg-[#f8f8f7] lg:h-14 lg:min-w-[72px] lg:rounded-2xl"
+                className="relative flex h-12 min-w-[56px] items-center justify-center rounded-2xl border border-[#ebe7e4] bg-white px-4 shadow-sm transition hover:bg-[#f8f8f7] lg:h-12 lg:min-w-[56px] lg:rounded-2xl"
                 aria-label="Desktop cart"
               >
-                <ShoppingCart className="h-auto w-5 lg:h-6 lg:w-6" aria-hidden="true" />
+                <img src={staticAssetUrl(headerCartUrl)} alt="Cart" className="h-auto w-5 lg:h-6 lg:w-6" />
                 {getTotalItems() > 0 && (
                   <span
                     className="absolute right-2 top-2 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-semibold"
@@ -380,7 +387,7 @@ export function StorefrontHeader({
               color: storefrontTheme.shippingBarText,
             }}
           >
-            {business?.shippingBannerText || "Free shipping across India"}
+            {business?.shippingBannerText || "Shipping available across India"}
           </div>
         </div>
       </header>

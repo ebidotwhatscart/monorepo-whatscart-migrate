@@ -127,10 +127,10 @@ export function CatalogsPage({
 
   const handleDelete = async (catalog: Catalog) => {
     setIsDeletingCatalog(true);
+    setCatalogPendingDelete(null);
     try {
       await deleteCatalog({ catalogId: catalog._id });
       toast.success("Collection deleted");
-      setCatalogPendingDelete(null);
     } catch (error) {
       toast.error(getErrorMessage(error));
     } finally {
@@ -799,13 +799,11 @@ function DeleteCollectionConfirmationModal({
   const [closing, setClosing] = useState(false);
 
   const handleCancel = () => {
-    setClosing(true);
-    setTimeout(onCancel, 300);
+    onCancel();
   };
 
   const handleConfirm = () => {
-    setClosing(true);
-    setTimeout(onConfirm, 300);
+    onConfirm();
   };
   return (
     <div

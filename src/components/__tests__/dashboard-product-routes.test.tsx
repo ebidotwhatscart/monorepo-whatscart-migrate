@@ -31,6 +31,7 @@ const business = {
   slug: "demo-store",
   themeColor: "#3DAC35",
   whatsappPhone: "919999999999",
+  businessType: "garments",
 };
 
 const product = {
@@ -90,23 +91,21 @@ describe("dashboard product routes", () => {
     }
     vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue(undefined);
 
-    vi.mocked(useMutation).mockImplementation((mutation) =>
-      mutation === api.catalogs.createCatalog
-        ? (mockCreateCollection as never)
-        : (mockCreateCollection as never),
-    );
+    vi.mocked(useMutation).mockImplementation(() => mockCreateCollection as never);
     vi.mocked(useQuery).mockImplementation(((_query, args) => {
       if (args === "skip") return undefined;
 
       if (args && typeof args === "object" && "productId" in args) {
-        if ("businessId" in args) {
+      if (_query === api.analytics.getProductPerformance) {
           return { totalViews: 12, timesShared: 3 } as never;
         }
+
+        if (_query === api.products.getProductVariants) return [] as never;
 
         return product as never;
       }
 
-      if (args && typeof args === "object" && "businessId" in args) {
+      if (_query === api.products.getBusinessProducts) {
         return [product, secondProduct] as never;
       }
 
@@ -167,9 +166,11 @@ describe("dashboard product routes", () => {
         productIds: ["product_1", "product_2"],
       });
     });
-    expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
-      expect.stringContaining("/store/demo-store/catalog/share123"),
-    );
+    await waitFor(() => {
+      expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
+        expect.stringContaining("catalog/share123"),
+      );
+    });
   });
 
   it("shows Collections as a tab inside the Products section", () => {

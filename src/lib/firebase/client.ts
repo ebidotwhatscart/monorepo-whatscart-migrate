@@ -40,7 +40,7 @@ export function getFirebaseClient() {
     connectAuthEmulator(client.auth, `http://${host}:9099`, {
       disableWarnings: true,
     });
-    connectFirestoreEmulator(client.firestore, host, 8080);
+    connectFirestoreEmulator(client.firestore, host, 8081);
     connectStorageEmulator(client.storage, host, 9199);
     emulatorsConnected = true;
   }

@@ -89,7 +89,7 @@ function ProductSectionTabs() {
     <header className="mx-auto border-b border-[#3DAC35]/10 bg-white backdrop-blur">
       <div className="flex items-center justify-between px-4 py-4">
         <h1 className="text-lg font-bold leading-[22.5px] text-slate-900">
-          Products & Collections
+          Products
         </h1>
       </div>
 

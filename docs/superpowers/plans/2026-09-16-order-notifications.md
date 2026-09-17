@@ -1,6 +1,6 @@
 # Order Notifications Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Notify the store owner via FCM web push + an in-app bell when a customer places an order on a storefront.
 
@@ -38,7 +38,7 @@
   - `sendPushToOwner(firestore, ownerId: string, message: { notification: ...; data: ... }): Promise<{ sent: number }>`
   - `notifyNewOrder(firestore: Firestore, businessId: string, input: OrderNotificationInput, sendPush?: typeof sendPushToOwner): Promise<{ ownerId: string; notificationId: string; sent: number } | null>`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `src/lib/firebase/__tests__/notifications.test.ts`:
 
@@ -139,12 +139,12 @@ describe("notifyNewOrder", () => {
 });
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `npx vitest run src/lib/firebase/__tests__/notifications.test.ts`
 Expected: FAIL — module `../notifications` has no exported members.
 
-- [ ] **Step 3: Add `getAdminMessaging` to admin.ts**
+- [x] **Step 3: Add `getAdminMessaging` to admin.ts**
 
 In `src/lib/firebase/admin.ts`, add the import and a new export alongside `getAdminFirestore`:
 
@@ -159,7 +159,7 @@ export function getAdminMessaging() {
 }
 ```
 
-- [ ] **Step 4: Write the notification library**
+- [x] **Step 4: Write the notification library**
 
 Create `src/lib/firebase/notifications.ts`:
 
@@ -253,17 +253,17 @@ export async function notifyNewOrder(
 }
 ```
 
-- [ ] **Step 5: Run tests to verify they pass**
+- [x] **Step 5: Run tests to verify they pass**
 
 Run: `npx vitest run src/lib/firebase/__tests__/notifications.test.ts`
 Expected: PASS (3 tests).
 
-- [ ] **Step 6: Typecheck**
+- [x] **Step 6: Typecheck**
 
 Run: `npm run typecheck`
 Expected: no errors.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add src/lib/firebase/notifications.ts src/lib/firebase/admin.ts src/lib/firebase/__tests__/notifications.test.ts
@@ -283,7 +283,7 @@ git commit -m "feat: add order notification library with FCM push"
 - Consumes: `notifyNewOrder` from Task 1; `createPublicOrder` existing signature.
 - Produces: `createPublicOrder` now returns `{ accessToken: string; order: string; orderId: string; totalAmount: number }`. Notification verification test asserts a doc under `users/{ownerId}/notifications`.
 
-- [ ] **Step 1: Write the failing integration test**
+- [x] **Step 1: Write the failing integration test**
 
 Create `src/lib/firebase/__tests__/notifications.integration.test.ts`:
 
@@ -384,12 +384,12 @@ describeWithEmulator("Order notifications", () => {
 
 Verify the seeded business prefix matches `getBusinessOrderPrefix` behavior used in the emulator (inspect `src/lib/firebase/public-commerce.ts:89` for the prefix; use the resulting literal in the assertion above, e.g. `NOTIF00001`). Adjust the assertion literal to the actual prefix.
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run (with emulators running): `FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 npx vitest run src/lib/firebase/__tests__/notifications.integration.test.ts`
 Expected: FAIL — assertion `notification.type` is undefined (no doc written).
 
-- [ ] **Step 3: Return totalAmount from createPublicOrder**
+- [x] **Step 3: Return totalAmount from createPublicOrder**
 
 In `src/lib/firebase/public-commerce.ts`, change the return at line ~324:
 
@@ -403,7 +403,7 @@ to:
 return { accessToken: orderAccessToken, order: orderRef.id, orderId, totalAmount: finalTotalAmount };
 ```
 
-- [ ] **Step 4: Wire notifyNewOrder into the route**
+- [x] **Step 4: Wire notifyNewOrder into the route**
 
 In `src/app/api/public/orders/route.ts`:
 
@@ -452,17 +452,17 @@ export async function POST(request: NextRequest) {
 }
 ```
 
-- [ ] **Step 5: Run tests to verify they pass**
+- [x] **Step 5: Run tests to verify they pass**
 
 Run: `npx vitest run src/lib/firebase/__tests__/notifications.integration.test.ts src/lib/firebase/__tests__/public-commerce.integration.test.ts src/lib/firebase/__tests__/private-orders.integration.test.ts`
 Expected: PASS — notification doc written; existing commerce/order tests still green.
 
-- [ ] **Step 6: Typecheck**
+- [x] **Step 6: Typecheck**
 
 Run: `npm run typecheck`
 Expected: no errors.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add src/lib/firebase/public-commerce.ts src/app/api/public/orders/route.ts src/lib/firebase/__tests__/notifications.integration.test.ts
@@ -486,7 +486,7 @@ git commit -m "feat: notify store owner when a public order is placed"
   - `DELETE /api/private/notifications/device?token=...` → deletes `users/{uid}/devices/{token}`.
   - `POST /api/private/notifications/read` body `{ notificationIds: string[] }` → sets `read: true` on those docs owned by `uid`.
 
-- [ ] **Step 1: Append failing tests**
+- [x] **Step 1: Append failing tests**
 
 Append to `src/lib/firebase/__tests__/notifications.integration.test.ts` inside the `describeWithEmulator` block:
 
@@ -574,12 +574,12 @@ Append to `src/lib/firebase/__tests__/notifications.integration.test.ts` inside 
 
 Note: the emulator auth sign-in flow above mirrors how existing integration tests mint real ID tokens. If a simpler ID-token minting helper already exists in `src/lib/firebase/__tests__/` (e.g. `createIdentity` in `private-orders.integration.test.ts`), reuse it instead and delete the inline signing code.
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 npx vitest run src/lib/firebase/__tests__/notifications.integration.test.ts`
 Expected: FAIL — imports of the new routes resolve to modules that don't exist (404 / no exported POST).
 
-- [ ] **Step 3: Create the device token route**
+- [x] **Step 3: Create the device token route**
 
 Create `src/app/api/private/notifications/device/route.ts`:
 
@@ -668,7 +668,7 @@ export async function DELETE(request: NextRequest) {
 }
 ```
 
-- [ ] **Step 4: Create the mark-read route**
+- [x] **Step 4: Create the mark-read route**
 
 Create `src/app/api/private/notifications/read/route.ts`:
 
@@ -729,7 +729,7 @@ export async function POST(request: NextRequest) {
 }
 ```
 
-- [ ] **Step 5: Add firestore rules**
+- [x] **Step 5: Add firestore rules**
 
 In `firestore.rules`, after the `match /users/{userId} { ... }` block (line ~32) add:
 
@@ -746,12 +746,12 @@ In `firestore.rules`, after the `match /users/{userId} { ... }` block (line ~32)
 
 Keep the `/*`-style comment removed; the repo uses `//` comments.
 
-- [ ] **Step 6: Run tests to verify they pass**
+- [x] **Step 6: Run tests to verify they pass**
 
 Run: `FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 npx vitest run src/lib/firebase/__tests__/notifications.integration.test.ts`
 Expected: PASS (3 tests total in this file).
 
-- [ ] **Step 7: Typecheck + rules check**
+- [x] **Step 7: Typecheck + rules check**
 
 Run: `npm run typecheck`
 Expected: no errors.
@@ -759,7 +759,7 @@ Expected: no errors.
 Run: `npx firebase-tools@15.4.0 emulators:exec --project demo-whatscart "echo rules ok"` (validates firestore.rules syntax on emulator boot).
 Expected: emulator starts without rule parse errors.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add src/app/api/private/notifications src/lib/firebase/__tests__/notifications.integration.test.ts firestore.rules
@@ -786,7 +786,7 @@ git commit -m "feat: add device token and mark-read notification routes"
   - `subscribeForegroundOrderMessages(handler: (payload: { notification?: { title?: string; body?: string }; data?: Record<string, string> }) => void): () => void`
   - `useOrderNotifications()` — self-contained hook: registers token on sign-in, unregisters on sign-out, toasts foreground pushes.
 
-- [ ] **Step 1: Confirm the gstatic FCM compat version exists**
+- [x] **Step 1: Confirm the gstatic FCM compat version exists**
 
 Check the exact installed client firebase version and that the compat SW scripts exist on gstatic:
 
@@ -796,7 +796,7 @@ node -e "console.log(require('./node_modules/firebase/package.json').version)"
 
 Then fetch `https://www.gstatic.com/firebasejs/<installed-version>/firebase-app-compat.js` (e.g. `12.17.1`) — Expected: 200. If 404, try the nearest available `12.x` release. Record the working version as `FCM_GSTATIC_VERSION`.
 
-- [ ] **Step 2: Extend the service worker source**
+- [x] **Step 2: Extend the service worker source**
 
 In `src/lib/pwa/service-worker.ts`, change the signature:
 
@@ -856,7 +856,7 @@ if ("importScripts" in self) {
 
 Replace the `FCM_GSTATIC_VERSION` placeholder in every `importScripts` URL with the version recorded in Step 1. Place the `firebaseMessagingBlock` so the SW's `fetch`/`activate` handlers are unaffected.
 
-- [ ] **Step 3: Pass the sender ID from the sw route**
+- [x] **Step 3: Pass the sender ID from the sw route**
 
 In `src/app/sw.js/route.ts`, update the GET handler:
 
@@ -871,7 +871,7 @@ In `src/app/sw.js/route.ts`, update the GET handler:
     {
 ```
 
-- [ ] **Step 4: Add the VAPID env to .env.example**
+- [x] **Step 4: Add the VAPID env to .env.example**
 
 Append after `NEXT_PUBLIC_FIREBASE_APP_ID=`:
 
@@ -879,7 +879,7 @@ Append after `NEXT_PUBLIC_FIREBASE_APP_ID=`:
 NEXT_PUBLIC_FIREBASE_VAPID_KEY=
 ```
 
-- [ ] **Step 5: Write the client messaging module**
+- [x] **Step 5: Write the client messaging module**
 
 Create `src/lib/firebase/client-messaging.ts`:
 
@@ -944,7 +944,7 @@ export async function unregisterPushDevice(token: string) {
 }
 ```
 
-- [ ] **Step 6: Write the useOrderNotifications hook**
+- [x] **Step 6: Write the useOrderNotifications hook**
 
 Create `src/hooks/useOrderNotifications.ts`:
 
@@ -1034,14 +1034,14 @@ async function clearToken() {
 
 Note: verify `useRegisterSW`'s `onRegisteredSW` option type accepts these args — it does (`(serviceWorkerUrl: string, registration?: ServiceWorkerRegistration) => void`). Do NOT add `"use client"` to the hook file if the module is only imported from client components; if the typecheck complains about server/client boundary, add it.
 
-- [ ] **Step 7: Verify build**
+- [x] **Step 7: Verify build**
 
 Run: `npm run build`
 Expected: SW route compiles; service worker source string includes the FCM importScripts when sender ID is present. (Build may take a while — this is the authoritative check that the template string is valid JS served as `application/javascript`.)
 
 Open the built site locally and fetch `/sw.js` with `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` set: the response should contain `firebase-messaging-compat` and `onBackgroundMessage`. With the env var unset, the response must NOT contain `onBackgroundMessage`.
 
-- [ ] **Step 8: Typecheck + commit**
+- [x] **Step 8: Typecheck + commit**
 
 Run: `npm run typecheck`
 Expected: no errors.
@@ -1063,7 +1063,7 @@ git commit -m "feat: register push tokens and handle FCM messages in service wor
 - Consumes: `useFirebaseAuth` (`user`), firestore client `collection/doc/onSnapshot/orderBy/limit/where` via `getFirebaseClient`, `useNavigate` from `react-router-dom`, `POST /api/private/notifications/read`.
 - Produces: `NotificationsBell()` — renders a bell with unread badge and a dropdown listing the latest 20 notifications; clicking an item navigates to `/dashboard/orders/{orderId}` and marks it read.
 
-- [ ] **Step 1: Write the component**
+- [x] **Step 1: Write the component**
 
 Create `src/components/NotificationsBell.tsx` (uses the modular `firebase/firestore` API — `collection`, `query`, `onSnapshot`, `where`, `orderBy`, `limit` — matching `src/lib/firebase/public-query.ts`):
 
@@ -1201,7 +1201,7 @@ export function NotificationsBell() {
 }
 ```
 
-- [ ] **Step 2: Mount the bell and the push hook in BusinessLayout**
+- [x] **Step 2: Mount the bell and the push hook in BusinessLayout**
 
 In `src/components/BusinessLayout.tsx`:
 
@@ -1219,19 +1219,19 @@ In `src/components/BusinessLayout.tsx`:
         <NotificationsBell />
   ```
 
-- [ ] **Step 3: Render check + typecheck**
+- [x] **Step 3: Render check + typecheck**
 
 Run: `npm run typecheck`
 Expected: no errors.
 
 Verify in the running dev app (`npm run dev`, dashboard host `app.whatscart.in` equivalent local `http://localhost:3000/dashboard`): the bell renders top-right of the 428px column, badge shows unread count from the emulator, clicking marks read and navigates to the order detail page.
 
-- [ ] **Step 4: Run the existing dashboard tests**
+- [x] **Step 4: Run the existing dashboard tests**
 
 Run: `npx vitest run src/components/__tests__/dashboard-order-flow.test.tsx src/components/__tests__/storefront-redesign.test.tsx`
 Expected: PASS (BusinessLayout renders with the bell without breaking existing snapshots/assertions; fix any failing assertion by keeping the bell markup minimal).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/components/NotificationsBell.tsx src/components/BusinessLayout.tsx
@@ -1245,3 +1245,9 @@ git commit -m "feat: add in-app notification bell to dashboard"
 - **Spec coverage:** push trigger (Task 2), token registration (Task 3 + Task 4), single-SW FCM (Task 4), bell (Task 5), rules (Task 3), env (Task 4), tests (all). Manual orders & WhatsApp fallback deliberately excluded per spec.
 - **Consistency:** `notifyNewOrder(firestore, businessId, input, sendPush)` signature used identically in Task 1 impl and Task 2 route. `buildOrderNotification` shape `{ notification, data }` matches `PushMessage` consumed by `sendPushToOwner`. `useOrderNotifications` import in Task 5 matches Task 4 definition. The FCM gstatic version is pinned in Task 4 Step 1 before the SW block is written.
 - **Known env dependency:** FCM token registration, permission prompt, and push delivery require a real Firebase project with `NEXT_PUBLIC_FIREBASE_VAPID_KEY` and a deployed `/sw.js`; emulator tests validate the Firestore doc/route behavior, not actual push delivery.
+
+## Follow-up verification
+
+- Known deviation acknowledged: FCM background handling is merged into the existing single `/sw.js`; no separate `firebase-messaging-sw.js` is registered because both would compete for root scope.
+- Known deviation acknowledged: `useOptionalFirebaseAuth` keeps `BusinessLayout` and its bell safe in test or preview trees without an auth provider.
+- Known env dependency acknowledged: real push verification requires the Firebase client and Admin variables in `.env.example`, plus a deployed `/sw.js`; no credentials are present locally.

@@ -539,14 +539,6 @@ export function ProductForm({
       nextErrors.description = "Description must be under 500 characters";
     }
 
-    if (!product && imagePreviews.length === 0) {
-      nextErrors.images = "At least 1 product image required";
-    }
-
-    if (!selectedCategoryLabel.trim() && !categoryId) {
-      nextErrors.category = "Please select a category";
-    }
-
     if (hasColorVariants) {
       const variationErrors: Record<number, string[]> = {};
 

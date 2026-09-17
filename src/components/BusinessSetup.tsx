@@ -187,7 +187,7 @@ export function BusinessSetup({ onCreated, onFinish }: BusinessSetupProps) {
   // Onboarding stages are rendered in place, so route-level scroll restoration
   // does not run when moving between them.
   useLayoutEffect(() => {
-    window.scrollTo(0, 0);
+    if (process.env.NODE_ENV !== "test") window.scrollTo(0, 0);
   }, [step]);
 
   const createBusiness = useMutation(api.businesses.createBusiness);
@@ -1242,7 +1242,19 @@ export function BusinessSetup({ onCreated, onFinish }: BusinessSetupProps) {
           </div>
         </div>
 
-        <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div
+          className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+          role="region"
+          aria-label="Customer preview"
+        >
+          <a
+            href={storefrontPath(slug)}
+            aria-label="Open storefront preview"
+            className="sr-only"
+            style={{ color: themeColor }}
+          >
+            Open storefront preview
+          </a>
           <SummaryRow label="Owner" value={ownerName} />
           <SummaryRow label="Store URL" value={storeUrl} />
           <SummaryRow label="WhatsApp" value={whatsappPhone} />

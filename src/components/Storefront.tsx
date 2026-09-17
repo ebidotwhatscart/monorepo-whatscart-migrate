@@ -118,7 +118,7 @@ export function Storefront() {
       const target = window.innerWidth >= 1024
         ? document.querySelector('[aria-label="Desktop collection categories"]')
         : document.getElementById("category-pills");
-      target?.scrollIntoView({ behavior: "smooth", block: "start" });
+      target?.scrollIntoView?.({ behavior: "smooth", block: "start" });
     }, 100);
   }, [categories]);
 
@@ -868,6 +868,7 @@ function FeaturedProductCard({
           New Arrival
         </span>
         <HeadingTag
+          aria-hidden="true"
           className="max-w-[280px] pt-[7px] text-[30px] font-bold leading-[37.5px] tracking-[-0.025em]"
         >
           {product.name}
@@ -915,6 +916,7 @@ function FeaturedProductCard({
             New Arrival
           </span>
           <HeadingTag
+            aria-hidden={headingLevel !== 1}
             className="max-w-[520px] text-[60px] font-black leading-[60px] tracking-normal text-[#2D3435]"
           >
             {product.name}

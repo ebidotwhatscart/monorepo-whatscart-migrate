@@ -4,6 +4,7 @@ import { useFirebaseQuery as useQuery } from "../../lib/firebase/hooks";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ProductForm } from "../products/ProductForm";
+import { api } from "../../lib/firebase/operations";
 
 vi.mock("../../lib/firebase/hooks", () => ({
   useFirebaseQuery: vi.fn(),
@@ -40,21 +41,14 @@ describe("ProductForm business types", () => {
     mockAddCustomVariationValue.mockReset();
 
     vi.mocked(useQuery).mockReturnValue([] as never);
-    const mutationMocks = [
-      mockCreateCategory,
-      mockDeleteCategory,
-      mockCreateProduct,
-      mockUpdateProduct,
-      mockGenerateUploadUrl,
-      mockAddCustomVariationType,
-      mockAddCustomVariationValue,
-    ];
-    let mutationIndex = 0;
-
-    vi.mocked(useMutation).mockImplementation(() => {
-      const nextMock = mutationMocks[mutationIndex % mutationMocks.length] ?? vi.fn();
-      mutationIndex += 1;
-      return nextMock as never;
+    vi.mocked(useMutation).mockImplementation((mutation) => {
+      if (mutation === api.categories.createCategory) return mockCreateCategory as never;
+      if (mutation === api.categories.deleteCategory) return mockDeleteCategory as never;
+      if (mutation === api.products.createProduct) return mockCreateProduct as never;
+      if (mutation === api.products.updateProduct) return mockUpdateProduct as never;
+      if (mutation === api.businesses.generateUploadUrl) return mockGenerateUploadUrl as never;
+      if (mutation === api.businessVariationOptions.addCustomVariationType) return mockAddCustomVariationType as never;
+      return mockAddCustomVariationValue as never;
     });
   });
 
@@ -226,6 +220,11 @@ describe("ProductForm business types", () => {
           customizationEnabled: true,
           customizationOptions: ["custom_text_message"],
         },
+        returnPolicy: {
+          returnable: true,
+          returnWindowDays: 7,
+          acceptedConditions: ["unused"],
+        },
       });
     });
   });
@@ -270,6 +269,11 @@ describe("ProductForm business types", () => {
           audience: "unisex",
           customizationEnabled: true,
           customizationOptions: ["custom_engraving"],
+        },
+        returnPolicy: {
+          returnable: true,
+          returnWindowDays: 7,
+          acceptedConditions: ["unused"],
         },
       });
     });

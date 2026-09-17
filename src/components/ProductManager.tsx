@@ -154,6 +154,12 @@ export function ProductManager({
     setShareCollectionOpen(true);
   };
 
+  const handleCopyCollection = async () => {
+    const url = await createCollection();
+    if (!url) return;
+    await navigator.clipboard.writeText(url);
+  };
+
   const handleShareProductsIndividually = async () => {
     if (selectedProductIds.size < 2) {
       toast.error("Select at least two products to create a collection");
@@ -529,6 +535,14 @@ export function ProductManager({
               >
                 <Share2 className="h-5 w-5" />
                 {isCreatingCollection ? "Creating..." : "Share"}
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleCopyCollection()}
+                disabled={isCreatingCollection || isSharingProducts}
+                className="flex h-12 w-full items-center justify-center rounded-md border border-slate-200 bg-white text-base font-bold text-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Copy Link
               </button>
             </div>
           </div>

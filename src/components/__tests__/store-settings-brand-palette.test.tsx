@@ -7,6 +7,7 @@ import {
   STOREFRONT_PALETTE_NEUTRAL,
 } from "../../lib/brandPalette";
 import { StoreSettings } from "../StoreSettings";
+import { api } from "../../lib/firebase/operations";
 
 vi.mock("../../lib/firebase/hooks", () => ({
   useFirebaseQuery: vi.fn(),
@@ -111,20 +112,12 @@ describe("StoreSettings brand palette", () => {
     createCategoryMock.mockReset();
     fetchMock.mockReset();
 
-    const mutationMocks = [
-      updateBusinessMock,
-      generateUploadUrlMock,
-      deleteCategoryMock,
-      createCategoryMock,
-    ];
-    let mutationCallIndex = 0;
-
-    vi.mocked(useMutation).mockImplementation((() => {
-      const nextMutationMock =
-        mutationMocks[mutationCallIndex % mutationMocks.length];
-      mutationCallIndex += 1;
-      return nextMutationMock as never;
-    }) as typeof useMutation);
+    vi.mocked(useMutation).mockImplementation((mutation) => {
+      if (mutation === api.businesses.updateBusiness) return updateBusinessMock as never;
+      if (mutation === api.businesses.generateUploadUrl) return generateUploadUrlMock as never;
+      if (mutation === api.categories.deleteCategory) return deleteCategoryMock as never;
+      return createCategoryMock as never;
+    });
 
     vi.mocked(useQuery).mockImplementation(((_query, args) => {
       if (args === "skip") {
@@ -254,7 +247,7 @@ describe("StoreSettings brand palette", () => {
 
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: /save changes/i }));
-      await Promise.resolve();
+      await vi.advanceTimersByTimeAsync(1500);
     });
 
     await eventually(() => {
