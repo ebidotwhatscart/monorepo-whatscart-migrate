@@ -134,3 +134,7 @@ export function useFirebaseAuth() {
   }
   return value;
 }
+
+export function useOptionalFirebaseAuth() {
+  return useContext(FirebaseAuthContext);
+}

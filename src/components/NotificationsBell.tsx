@@ -11,7 +11,7 @@ import {
 } from "firebase/firestore";
 
 import { getFirebaseClient } from "@/lib/firebase/client";
-import { useFirebaseAuth } from "@/lib/firebase/auth-context";
+import { useOptionalFirebaseAuth } from "@/lib/firebase/auth-context";
 
 type NotificationItem = {
   id: string;
@@ -23,7 +23,9 @@ type NotificationItem = {
 };
 
 export function NotificationsBell() {
-  const { isSignedIn, user } = useFirebaseAuth();
+  const auth = useOptionalFirebaseAuth();
+  const isSignedIn = auth?.isSignedIn ?? false;
+  const user = auth?.user ?? null;
   const navigate = useNavigate();
   const [unread, setUnread] = useState(0);
   const [items, setItems] = useState<NotificationItem[]>([]);

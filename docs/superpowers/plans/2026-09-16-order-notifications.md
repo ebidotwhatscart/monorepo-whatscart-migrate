@@ -43,7 +43,7 @@
 Create `src/lib/firebase/__tests__/notifications.test.ts`:
 
 ```ts
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   buildOrderNotification,
   notifyNewOrder,
@@ -56,16 +56,19 @@ const input: OrderNotificationInput = {
   totalAmount: 1397,
 };
 
-function fakeFirestore(overrides: Record<string, unknown> = {}) {
-  return {
-    collection: vi.fn(() => ({
-      doc: vi.fn(() => ({
-        set: vi.fn(async () => {}),
-      })),
-    })),
-    doc: vi.fn(() => ({ get: vi.fn(async () => ({ data: () => overrides })) })),
-    collectionGroup: vi.fn(),
+function ownedBusinessShapedFirestore(ownerId: string | undefined) {
+  const documentRef = { id: "notif-1", set: vi.fn(async () => {}) };
+  const notificationsCollection = { doc: vi.fn(() => documentRef) };
+  const usersDoc = { collection: vi.fn(() => notificationsCollection) };
+  const businessDoc = { get: vi.fn(async () => ({ data: () => ({ ownerId }) })) };
+  const firestore = {
+    collection: vi.fn((name: string) =>
+      name === "businesses"
+        ? { doc: vi.fn(() => businessDoc) }
+        : { doc: vi.fn(() => usersDoc) },
+    ),
   } as never;
+  return { firestore, documentRef };
 }
 
 describe("buildOrderNotification", () => {
@@ -91,36 +94,21 @@ describe("buildOrderNotification", () => {
 
 describe("notifyNewOrder", () => {
   it("returns null when the business has no owner", async () => {
+    const { firestore } = ownedBusinessShapedFirestore(undefined);
     const sendPush = vi.fn();
-    const result = await notifyNewOrder(
-      fakeFirestore({ ownerId: undefined }),
-      "business-1",
-      input,
-      sendPush as never,
-    );
+    const result = await notifyNewOrder(firestore, "business-1", input, sendPush as never);
     expect(result).toBeNull();
     expect(sendPush).not.toHaveBeenCalled();
   });
 
   it("writes a notification doc and pushes to the owner", async () => {
     const ownerId = "owner-uid";
-    const documentRef = { set: vi.fn(async () => {}) };
-    const collection = vi.fn(() => ({ doc: vi.fn(() => documentRef) }));
-    const firestore = {
-      collection,
-      doc: vi.fn(() => ({ get: vi.fn(async () => ({ data: () => ({ ownerId }) })) })),
-    } as never;
+    const { firestore, documentRef } = ownedBusinessShapedFirestore(ownerId);
     const sendPush = vi.fn(async () => ({ sent: 1 }));
 
-    const result = await notifyNewOrder(
-      firestore,
-      "business-1",
-      input,
-      sendPush as never,
-    );
+    const result = await notifyNewOrder(firestore, "business-1", input, sendPush as never);
 
-    expect(collection).toHaveBeenCalledWith("users");
-    expect(result).toEqual({ ownerId, notificationId: expect.any(String), sent: 1 });
+    expect(result).toEqual({ ownerId, notificationId: "notif-1", sent: 1 });
     expect(documentRef.set).toHaveBeenCalledWith(
       expect.objectContaining({
         type: "order",
@@ -138,18 +126,15 @@ describe("notifyNewOrder", () => {
   });
 
   it("still returns the doc when push fails", async () => {
-    const documentRef = { set: vi.fn(async () => {}) };
-    const firestore = {
-      collection: vi.fn(() => ({ doc: vi.fn(() => documentRef) })),
-      doc: vi.fn(() => ({ get: vi.fn(async () => ({ data: () => ({ ownerId: "o" }) })) })),
-    } as never;
+    const ownerId = "owner-uid";
+    const { firestore } = ownedBusinessShapedFirestore(ownerId);
     const sendPush = vi.fn(async () => {
       throw new Error("fcm down");
     });
 
     await expect(
       notifyNewOrder(firestore, "business-1", input, sendPush as never),
-    ).resolves.toEqual({ ownerId: "o", notificationId: expect.any(String), sent: 0 });
+    ).resolves.toEqual({ ownerId, notificationId: "notif-1", sent: 0 });
   });
 });
 ```
@@ -1080,12 +1065,20 @@ git commit -m "feat: register push tokens and handle FCM messages in service wor
 
 - [ ] **Step 1: Write the component**
 
-Create `src/components/NotificationsBell.tsx`:
+Create `src/components/NotificationsBell.tsx` (uses the modular `firebase/firestore` API — `collection`, `query`, `onSnapshot`, `where`, `orderBy`, `limit` — matching `src/lib/firebase/public-query.ts`):
 
 ```tsx
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Bell } from "lucide-react";
+import {
+  collection,
+  limit,
+  onSnapshot,
+  orderBy,
+  query,
+  where,
+} from "firebase/firestore";
 
 import { getFirebaseClient } from "@/lib/firebase/client";
 import { useFirebaseAuth } from "@/lib/firebase/auth-context";
@@ -1100,30 +1093,25 @@ type NotificationItem = {
 };
 
 export function NotificationsBell() {
-  const { isSignedIn } = useFirebaseAuth();
+  const { isSignedIn, user } = useFirebaseAuth();
   const navigate = useNavigate();
   const [unread, setUnread] = useState(0);
   const [items, setItems] = useState<NotificationItem[]>([]);
   const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const unsubscribersRef = useRef<(() => void)[]>([]);
 
   useEffect(() => {
     const client = getFirebaseClient();
-    if (!client || !isSignedIn || !client.auth.currentUser) return;
-    const uid = client.auth.currentUser.uid;
-    const notificationsRef = client.firestore
-      .collection("users")
-      .doc(uid)
-      .collection("notifications");
+    if (!client || !isSignedIn || !user) return;
+    const uid = user.uid;
+    const notificationsRef = collection(client.firestore, "users", uid, "notifications");
 
-    const offUnread = notificationsRef
-      .where("read", "==", false)
-      .onSnapshot((snapshot) => setUnread(snapshot.docs.length));
-    const offLatest = notificationsRef
-      .orderBy("createdAt", "desc")
-      .limit(20)
-      .onSnapshot((snapshot) => {
+    const offUnread = onSnapshot(
+      query(notificationsRef, where("read", "==", false)),
+      (snapshot) => setUnread(snapshot.docs.length),
+    );
+    const offLatest = onSnapshot(
+      query(notificationsRef, orderBy("createdAt", "desc"), limit(20)),
+      (snapshot) => {
         setItems(
           snapshot.docs.map((doc) => {
             const data = doc.data();
@@ -1137,23 +1125,23 @@ export function NotificationsBell() {
             };
           }),
         );
-      });
-    unsubscribersRef.current.push(offUnread, offLatest);
+      },
+    );
     return () => {
       offUnread();
       offLatest();
     };
-  }, [isSignedIn]);
+  }, [isSignedIn, user]);
 
   async function markRead(ids: string[]) {
     if (!ids.length) return;
     const client = getFirebaseClient();
-    const user = client?.auth.currentUser;
-    if (!user) return;
+    const authUser = client?.auth.currentUser;
+    if (!authUser) return;
     try {
       await fetch("/api/private/notifications/read", {
         method: "POST",
-        headers: { authorization: `Bearer ${await user.getIdToken()}` },
+        headers: { authorization: `Bearer ${await authUser.getIdToken()}` },
         body: JSON.stringify({ notificationIds: ids }),
       });
     } catch (error) {
@@ -1192,9 +1180,7 @@ export function NotificationsBell() {
       </button>
       {open && (
         <div className="absolute right-0 mt-2 w-72 max-h-96 overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg">
-          {loading ? (
-            <div className="p-4 text-center text-sm text-slate-500">Loading…</div>
-          ) : items.length === 0 ? (
+          {items.length === 0 ? (
             <div className="p-4 text-center text-sm text-slate-500">No notifications yet</div>
           ) : (
             items.map((item) => (

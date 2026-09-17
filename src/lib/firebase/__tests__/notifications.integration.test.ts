@@ -26,16 +26,27 @@ type EmulatorIdentity = { email: string; idToken: string; localId: string };
 
 async function createIdentity(email: string): Promise<EmulatorIdentity> {
   const password = "Test-password-123!";
-  const response = await fetch(
-    `http://${process.env.FIREBASE_AUTH_EMULATOR_HOST}/identitytoolkit.googleapis.com/v1/accounts:signUp?key=demo-key`,
-    {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ email, password, returnSecureToken: true }),
-    },
-  );
-  if (!response.ok) throw new Error(await response.text());
-  const identity = (await response.json()) as {
+  const endpoint = `http://${process.env.FIREBASE_AUTH_EMULATOR_HOST}/identitytoolkit.googleapis.com/v1/accounts`;
+  const signUpResponse = await fetch(`${endpoint}:signUp?key=demo-key`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ email, password, returnSecureToken: true }),
+  });
+  if (signUpResponse.ok) {
+    const identity = (await signUpResponse.json()) as {
+      email: string;
+      idToken: string;
+      localId: string;
+    };
+    return identity;
+  }
+  const signInResponse = await fetch(`${endpoint}:signInWithPassword?key=demo-key`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ email, password, returnSecureToken: true }),
+  });
+  if (!signInResponse.ok) throw new Error(await signInResponse.text());
+  const identity = (await signInResponse.json()) as {
     email: string;
     idToken: string;
     localId: string;

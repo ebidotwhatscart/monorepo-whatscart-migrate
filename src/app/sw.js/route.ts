@@ -8,13 +8,19 @@ export function GET() {
     process.env.VERCEL_GIT_COMMIT_SHA ??
     process.env.NEXT_PUBLIC_APP_VERSION ??
     "local-development";
-  return new Response(serviceWorkerSource(deploymentVersion), {
-    headers: {
-      "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
-      "cdn-cache-control": "no-store",
-      "content-type": "application/javascript; charset=utf-8",
-      "service-worker-allowed": "/",
-      "vercel-cdn-cache-control": "no-store",
+  return new Response(
+    serviceWorkerSource(
+      deploymentVersion,
+      process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID ?? "",
+    ),
+    {
+      headers: {
+        "cache-control": "no-cache, no-store, max-age=0, must-revalidate",
+        "cdn-cache-control": "no-store",
+        "content-type": "application/javascript; charset=utf-8",
+        "service-worker-allowed": "/",
+        "vercel-cdn-cache-control": "no-store",
+      },
     },
-  });
+  );
 }

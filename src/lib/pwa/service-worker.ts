@@ -1,5 +1,45 @@
-export function serviceWorkerSource(deploymentVersion: string) {
+export function serviceWorkerSource(deploymentVersion: string, messagingSenderId = "") {
   const version = JSON.stringify(`whatscart-${deploymentVersion}`);
+  const firebaseMessagingBlock =
+    messagingSenderId
+      ? String.raw`
+if ("importScripts" in self) {
+  try {
+    importScripts("https://www.gstatic.com/firebasejs/12.17.1/firebase-app-compat.js");
+    importScripts("https://www.gstatic.com/firebasejs/12.17.1/firebase-messaging-compat.js");
+    firebase.initializeApp({ messagingSenderId: ${JSON.stringify(messagingSenderId)} });
+    var fcmMessaging = firebase.messaging();
+    fcmMessaging.onBackgroundMessage(function (payload) {
+      var notification = payload.notification || {};
+      var data = payload.data || {};
+      var url = data.url || ("/dashboard/orders/" + (data.orderId || ""));
+      self.registration.showNotification(notification.title || "New order", {
+        body: notification.body || "",
+        icon: "/pwa-192x192.png",
+        badge: "/pwa-192x192.png",
+        data: { url: url },
+      });
+    });
+    self.addEventListener("notificationclick", function (event) {
+      event.notification.close();
+      var targetUrl = (event.notification.data && event.notification.data.url) || "/dashboard/orders";
+      event.waitUntil(
+        clients.matchAll({ type: "window", includeUncontrolled: true }).then(function (windowClients) {
+          for (var i = 0; i < windowClients.length; i++) {
+            var client = windowClients[i];
+            if ("navigate" in client) {
+              return client.navigate(targetUrl).then(function () { return client.focus(); });
+            }
+          }
+          return clients.openWindow(targetUrl);
+        })
+      );
+    });
+  } catch (error) {
+    console.error("FCM service worker init failed:", error);
+  }
+}`
+      : "";
   return `const CACHE_VERSION = ${version};\n` + String.raw`
 const CACHE_PREFIX = "whatscart-";
 const LEGACY_CACHE_NAMES = new Set([
@@ -97,5 +137,5 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(networkFirst(request));
   }
 });
-`;
+` + firebaseMessagingBlock;
 }
