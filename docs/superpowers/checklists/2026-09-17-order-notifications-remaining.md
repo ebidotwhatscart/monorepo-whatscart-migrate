@@ -54,3 +54,4 @@ Report the final commit SHAs for each change. Stop and ask if any step contradic
 - Notification integration: 3 passed with `FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099` and `FIRESTORE_EMULATOR_HOST=127.0.0.1:8081`.
 - `.env.local` is absent. Developer must provide the client Firebase variables and Admin variables listed in `.env.example`; client returns `null` when API key or project ID is absent.
 - Plan checkboxes and known deviations are recorded in `docs/superpowers/plans/2026-09-16-order-notifications.md`.
+- Branch finish decision: keep `feature/notification` unmerged and unpushed; `git log main..feature/notification` shows only this feature plus cleanup, and no merge/PR authority was provided.
