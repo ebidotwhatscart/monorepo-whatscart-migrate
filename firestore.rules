@@ -31,6 +31,15 @@ service cloud.firestore {
       allow read, write: if isSuperAdmin();
     }
 
+    match /users/{userId}/devices/{token} {
+      allow read, write: if isSuperAdmin();
+    }
+
+    match /users/{userId}/notifications/{notificationId} {
+      allow read: if signedIn() && request.auth.uid == userId;
+      allow write: if isSuperAdmin();
+    }
+
     match /businesses/{businessId} {
       allow read: if (!('isEnabled' in resource.data) || resource.data.isEnabled == true)
         || ownsBusiness(businessId)

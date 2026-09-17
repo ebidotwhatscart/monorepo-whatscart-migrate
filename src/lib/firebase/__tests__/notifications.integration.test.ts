@@ -1,18 +1,47 @@
+// @vitest-environment node
+
 import { NextRequest } from "next/server";
 import { beforeAll, describe, expect, it } from "vitest";
 import type { Firestore } from "firebase-admin/firestore";
 
-const emulatorAvailable = Boolean(process.env.FIRESTORE_EMULATOR_HOST);
+const emulatorAvailable = Boolean(
+  process.env.FIREBASE_AUTH_EMULATOR_HOST &&
+    process.env.FIRESTORE_EMULATOR_HOST,
+);
 const describeWithEmulator = emulatorAvailable ? describe : describe.skip;
 
 if (emulatorAvailable) {
   process.env.FIREBASE_PROJECT_ID = "demo-whatscart";
   process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID = "demo-whatscart";
+  process.env.NEXT_PUBLIC_FIREBASE_API_KEY = "demo-key";
+  process.env.NEXT_PUBLIC_FIREBASE_USE_EMULATORS = "true";
+  process.env.NEXT_PUBLIC_FIREBASE_EMULATOR_HOST = "127.0.0.1";
 }
 
 const customerAccessToken = "notify_customer_token_1234567890abcdef";
 
 let firestore: Firestore;
+
+type EmulatorIdentity = { email: string; idToken: string; localId: string };
+
+async function createIdentity(email: string): Promise<EmulatorIdentity> {
+  const password = "Test-password-123!";
+  const response = await fetch(
+    `http://${process.env.FIREBASE_AUTH_EMULATOR_HOST}/identitytoolkit.googleapis.com/v1/accounts:signUp?key=demo-key`,
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ email, password, returnSecureToken: true }),
+    },
+  );
+  if (!response.ok) throw new Error(await response.text());
+  const identity = (await response.json()) as {
+    email: string;
+    idToken: string;
+    localId: string;
+  };
+  return identity;
+}
 
 function orderBody() {
   return {
@@ -59,6 +88,7 @@ describeWithEmulator("Order notifications", () => {
         name: "Test Tee",
         price: 499,
       }),
+      firestore.collection("users").doc("notify-owner").set({ role: "owner" }),
     ]);
   });
 
@@ -86,5 +116,55 @@ describeWithEmulator("Order notifications", () => {
     expect(notification.read).toBe(false);
     expect(notification.orderNumber).toBe("NOTI00001");
     expect(notification.message).toMatch(/Order NOTI00001 — ₹998/);
+  });
+
+  it("registers and removes a device token for the signed-in owner", async () => {
+    const { POST, DELETE } = await import("../../../app/api/private/notifications/device/route");
+    const identity = await createIdentity("notify-owner@example.test");
+
+    const tokenValue = "fcm-token-device-0001";
+    const register = new NextRequest("http://app.whatscart.in/api/private/notifications/device", {
+      method: "POST",
+      headers: { authorization: `Bearer ${identity.idToken}` },
+      body: JSON.stringify({ token: tokenValue }),
+    });
+    const registerResponse = await POST(register);
+    expect(registerResponse.status).toBe(200);
+
+    const deviceDoc = await firestore
+      .collection("users")
+      .doc(identity.localId)
+      .collection("devices")
+      .doc(tokenValue)
+      .get();
+    expect(deviceDoc.exists).toBe(true);
+    expect(deviceDoc.data()?.token).toBe(tokenValue);
+
+    const remove = new NextRequest(
+      `http://app.whatscart.in/api/private/notifications/device?token=${encodeURIComponent(tokenValue)}`,
+      { method: "DELETE", headers: { authorization: `Bearer ${identity.idToken}` } },
+    );
+    const removeResponse = await DELETE(remove);
+    expect(removeResponse.status).toBe(200);
+    expect((await deviceDoc.ref.get()).exists).toBe(false);
+  });
+
+  it("marks own notifications as read", async () => {
+    const { POST } = await import("../../../app/api/private/notifications/read/route");
+    const identity = await createIdentity("notify-owner-2@example.test");
+    const created = await firestore
+      .collection("users")
+      .doc(identity.localId)
+      .collection("notifications")
+      .add({ type: "order", orderId: "x", read: false, createdAt: Date.now() });
+
+    const request = new NextRequest("http://app.whatscart.in/api/private/notifications/read", {
+      method: "POST",
+      headers: { authorization: `Bearer ${identity.idToken}` },
+      body: JSON.stringify({ notificationIds: [created.id] }),
+    });
+    const response = await POST(request);
+    expect(response.status).toBe(200);
+    expect((await created.get()).data()?.read).toBe(true);
   });
 });
