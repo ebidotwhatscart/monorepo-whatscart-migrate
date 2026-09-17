@@ -29,7 +29,6 @@ dist/
 *.idsig
 *.jks
 *.keystore
-
 # Bubblewrap can generate a complete Android project in the repository root.
 # The maintained Android project lives under bubblewrap/.
 /.gradle/
@@ -46,3 +45,13 @@ dist/
 /app-release-signed.apk
 /app-release-unsigned-aligned.apk
 /app-release-bundle.aab
+
+bubblewrap/.gradle/
+bubblewrap/app/build/
+bubblewrap/local.properties
+.env
+.env.*
+!.env.example
+.vercel
+.env*
+.opencode/

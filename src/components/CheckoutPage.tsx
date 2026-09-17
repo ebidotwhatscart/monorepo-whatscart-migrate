@@ -58,20 +58,33 @@ export function CheckoutPage() {
     [searchParams],
   );
 
-  const [customerName, setCustomerName] = useState("");
-  const [customerMobile, setCustomerMobile] = useState("");
-  const [customerAlternateMobile, setCustomerAlternateMobile] = useState("");
-  const [customerDoorNumber, setCustomerDoorNumber] = useState("");
-  const [customerAddress, setCustomerAddress] = useState("");
-  const [customerLocation, setCustomerLocation] = useState<CustomerLocation | null>(null);
-  const [locationLabel, setLocationLabel] = useState("");
-  const [notes, setNotes] = useState("");
+  const slug = searchParams.get("slug");
+  const draftKey = `whatscart_checkout_draft_${slug ?? "default"}`;
+  const readDraft = () => {
+    if (typeof sessionStorage === "undefined") return {} as Record<string, unknown>;
+    try {
+      return JSON.parse(sessionStorage.getItem(draftKey) || "{}") as Record<string, unknown>;
+    } catch {
+      return {} as Record<string, unknown>;
+    }
+  };
+  const initialDraft = readDraft();
+
+  const [customerName, setCustomerName] = useState((initialDraft.customerName as string) || "");
+  const [customerMobile, setCustomerMobile] = useState((initialDraft.customerMobile as string) || "");
+  const [customerAlternateMobile, setCustomerAlternateMobile] = useState((initialDraft.customerAlternateMobile as string) || "");
+  const [customerDoorNumber, setCustomerDoorNumber] = useState((initialDraft.customerDoorNumber as string) || "");
+  const [customerAddress, setCustomerAddress] = useState((initialDraft.customerAddress as string) || "");
+  const [customerLocation, setCustomerLocation] = useState<CustomerLocation | null>((initialDraft.customerLocation as CustomerLocation) || null);
+  const [locationLabel, setLocationLabel] = useState((initialDraft.locationLabel as string) || "");
+  const [notes, setNotes] = useState((initialDraft.notes as string) || "");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
   const [addressLookupStatus, setAddressLookupStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [addressLookupMessage, setAddressLookupMessage] = useState("");
   const addressWasEdited = useRef(false);
   const lookupAddressBase = useRef("");
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
 
   const { items, clearCart } = useCart();
   const createOrder = useMutation(api.orders.createOrder);
@@ -152,8 +165,39 @@ export function CheckoutPage() {
     return () => controller.abort();
   }, [customerLocation, customerDoorNumber]);
 
+  // Persist checkout details to sessionStorage so they survive a refresh
+  useEffect(() => {
+    if (typeof sessionStorage === "undefined") return;
+    try {
+      sessionStorage.setItem(
+        draftKey,
+        JSON.stringify({
+          customerName,
+          customerMobile,
+          customerAlternateMobile,
+          customerDoorNumber,
+          customerAddress,
+          customerLocation,
+          locationLabel,
+          notes,
+        }),
+      );
+    } catch {
+      // ignore storage errors
+    }
+  }, [
+    draftKey,
+    customerName,
+    customerMobile,
+    customerAlternateMobile,
+    customerDoorNumber,
+    customerAddress,
+    customerLocation,
+    locationLabel,
+    notes,
+  ]);
+
   // Fetch business and product data
-  const slug = searchParams.get("slug");
   const business = useQuery(api.businesses.getBusinessBySlug, { slug: slug! });
 
   const checkoutTheme = business ? createStorefrontTheme({
@@ -305,8 +349,43 @@ export function CheckoutPage() {
     );
   };
 
+  // Field-level validation helpers
+  const validateName = (v: string) =>
+    v.trim().length < 2 ? "Please enter your full name" : undefined;
+  const validateMobile = (v: string) =>
+    /^[6-9]\d{9}$/.test(v.trim()) ? undefined : "Enter a valid 10-digit Indian mobile number";
+  const validateAlternateMobile = (v: string) => {
+    if (!/^[6-9]\d{9}$/.test(v.trim())) return "Enter a valid 10-digit alternate mobile number";
+    if (customerMobile.trim() === v.trim()) return "Alternate number must be different from primary";
+    return undefined;
+  };
+  const validateDoorNumber = (v: string) =>
+    v.trim() ? undefined : "Please enter your door or flat number";
+  const validateAddress = (v: string) =>
+    v.trim() ? undefined : "Please enter your delivery address";
+
+  const fieldError = {
+    name: touched.name ? validateName(customerName) : undefined,
+    mobile: touched.mobile ? validateMobile(customerMobile) : undefined,
+    alternateMobile: touched.alternateMobile ? validateAlternateMobile(customerAlternateMobile) : undefined,
+    doorNumber: touched.doorNumber ? validateDoorNumber(customerDoorNumber) : undefined,
+    address: touched.address ? validateAddress(customerAddress) : undefined,
+  };
+
+  const hasFieldError = Object.values(fieldError).some(Boolean);
+
+  const markTouched = (field: string) => setTouched((prev) => ({ ...prev, [field]: true }));
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    setTouched({
+      name: true,
+      mobile: true,
+      alternateMobile: true,
+      doorNumber: true,
+      address: true,
+    });
 
     // Validation
     if (!customerName.trim()) {
@@ -324,6 +403,10 @@ export function CheckoutPage() {
     const trimmedAlternateMobile = customerAlternateMobile.trim();
     if (!/^[6-9]\d{9}$/.test(trimmedAlternateMobile)) {
       toast.error("Enter a valid 10-digit alternate mobile number");
+      return;
+    }
+    if (customerMobile.trim() === trimmedAlternateMobile) {
+      toast.error("Alternate mobile number must be different from the primary mobile number");
       return;
     }
     const trimmedDoorNumber = customerDoorNumber.trim();
@@ -395,7 +478,7 @@ export function CheckoutPage() {
           price: item.price,
           customizationNotes: item.customizationNotes,
         })),
-        totalAmount,
+        totalAmount: rawSubtotal,
       });
 
       // Clear cart if checkout was from cart
@@ -437,6 +520,12 @@ export function CheckoutPage() {
 
       // Navigate to success page
       navigate(orderSuccessPath);
+
+      try {
+        sessionStorage.removeItem(draftKey);
+      } catch {
+        // ignore
+      }
 
       // Open WhatsApp in a new tab after a short delay
       setTimeout(() => {
@@ -493,11 +582,19 @@ export function CheckoutPage() {
                       type="text"
                       value={customerName}
                       onChange={(e) => setCustomerName(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                      onBlur={() => markTouched("name")}
+                      className={`w-full pl-10 pr-4 py-3 rounded-lg border outline-none transition-colors ${
+                        fieldError.name
+                          ? "border-red-400 focus:border-red-400 focus:ring-1 focus:ring-red-400"
+                          : "border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary"
+                      }`}
                       placeholder="John Doe"
                       required
                     />
                   </div>
+                  {fieldError.name && (
+                    <p className="text-xs text-red-600 mt-1">{fieldError.name}</p>
+                  )}
                 </div>
 
                 {/* Mobile Number */}
@@ -514,15 +611,24 @@ export function CheckoutPage() {
                       onChange={(e) =>
                         setCustomerMobile(e.target.value.replace(/\D/g, "").slice(0, 10))
                       }
-                      className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                      onBlur={() => markTouched("mobile")}
+                      className={`w-full pl-10 pr-4 py-3 rounded-lg border outline-none transition-colors ${
+                        fieldError.mobile
+                          ? "border-red-400 focus:border-red-400 focus:ring-1 focus:ring-red-400"
+                          : "border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary"
+                      }`}
                       placeholder="9876543210"
                       maxLength={10}
                       required
                     />
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    10-digit Indian mobile number (e.g., 9876543210)
-                  </p>
+                  {fieldError.mobile ? (
+                    <p className="text-xs text-red-600 mt-1">{fieldError.mobile}</p>
+                  ) : (
+                    <p className="text-xs text-gray-500 mt-1">
+                      10-digit Indian mobile number (e.g., 9876543210)
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -536,13 +642,22 @@ export function CheckoutPage() {
                       inputMode="numeric"
                       value={customerAlternateMobile}
                       onChange={(e) => setCustomerAlternateMobile(e.target.value.replace(/\D/g, "").slice(0, 10))}
-                      className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                      onBlur={() => markTouched("alternateMobile")}
+                      className={`w-full pl-10 pr-4 py-3 rounded-lg border outline-none transition-colors ${
+                        fieldError.alternateMobile
+                          ? "border-red-400 focus:border-red-400 focus:ring-1 focus:ring-red-400"
+                          : "border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary"
+                      }`}
                       placeholder="9876543210"
                       maxLength={10}
                       required
                     />
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">A second number for delivery updates.</p>
+                  {fieldError.alternateMobile ? (
+                    <p className="text-xs text-red-600 mt-1">{fieldError.alternateMobile}</p>
+                  ) : (
+                    <p className="text-xs text-gray-500 mt-1">A second number for delivery updates.</p>
+                  )}
                 </div>
 
                 {/* Delivery Address */}
@@ -564,11 +679,19 @@ export function CheckoutPage() {
                             .join(", "));
                         }
                       }}
-                      className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                      onBlur={() => markTouched("doorNumber")}
+                      className={`w-full pl-10 pr-4 py-3 rounded-lg border outline-none transition-colors ${
+                        fieldError.doorNumber
+                          ? "border-red-400 focus:border-red-400 focus:ring-1 focus:ring-red-400"
+                          : "border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary"
+                      }`}
                       placeholder="Door no, flat no, floor"
                       required
                     />
                   </div>
+                  {fieldError.doorNumber && (
+                    <p className="text-xs text-red-600 mt-1">{fieldError.doorNumber}</p>
+                  )}
                 </div>
 
                 <div>
@@ -583,14 +706,23 @@ export function CheckoutPage() {
                         addressWasEdited.current = true;
                         setCustomerAddress(e.target.value);
                       }}
+                      onBlur={() => markTouched("address")}
                       rows={3}
-                      className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none resize-none"
+                      className={`w-full pl-10 pr-4 py-3 rounded-lg border outline-none transition-colors resize-none ${
+                        fieldError.address
+                          ? "border-red-400 focus:border-red-400 focus:ring-1 focus:ring-red-400"
+                          : "border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary"
+                      }`}
                       placeholder="House, street, area, city"
                     />
                   </div>
-                  <p className="mt-1 text-xs text-gray-500">
-                    Select a map location below to fill this field automatically, then add any missing details.
-                  </p>
+                  {fieldError.address ? (
+                    <p className="mt-1 text-xs text-red-600">{fieldError.address}</p>
+                  ) : (
+                    <p className="mt-1 text-xs text-gray-500">
+                      Select a map location below to fill this field automatically, then add any missing details.
+                    </p>
+                  )}
                   {addressLookupMessage && (
                     <p className={`mt-2 text-xs ${addressLookupStatus === "error" ? "text-red-600" : addressLookupStatus === "success" ? "text-green-700" : "text-gray-500"}`}>
                       {addressLookupMessage}

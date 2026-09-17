@@ -54,6 +54,8 @@ export function CreatePromotionPage({ business }: CreatePromotionPageProps) {
   const [couponCode, setCouponCode] = useState("");
   const [totalUsageLimit, setTotalUsageLimit] = useState("");
   const [minOrderValue, setMinOrderValue] = useState("");
+  const [applyByDefault, setApplyByDefault] = useState<boolean>(false);
+  const [noEndDate, setNoEndDate] = useState<boolean>(false);
 
   // Selected Products state
   const [selectedProducts, setSelectedProducts] = useState<SelectedProductItem[]>([
@@ -201,6 +203,14 @@ export function CreatePromotionPage({ business }: CreatePromotionPageProps) {
         setSelectedType(found.category === "percentage" ? "percentage" : "flat");
         setDiscountValue(found.discountValue || "0");
         setApplyTo(found.applyTo || "cart");
+        if (found.startDate) setStartDate(found.startDate);
+        if (found.endDate) {
+          setEndDate(found.endDate);
+          setNoEndDate(false);
+        } else {
+          setNoEndDate(true);
+        }
+        setApplyByDefault(!!found.applyByDefault);
         if (found.couponCode) setCouponCode(found.couponCode);
         if (found.totalUsageLimit) setTotalUsageLimit(found.totalUsageLimit);
         if (found.minOrderValue) setMinOrderValue(found.minOrderValue);
@@ -252,9 +262,13 @@ export function CreatePromotionPage({ business }: CreatePromotionPageProps) {
       isExpired: false,
       applyTo,
       discountValue,
+      applyByDefault: applyTo === "cart" ? applyByDefault : false,
+      applyToDiscounted,
       couponCode: couponCode || undefined,
       totalUsageLimit: totalUsageLimit || undefined,
       minOrderValue: minOrderValue || undefined,
+      startDate: startDate || undefined,
+      endDate: noEndDate ? undefined : endDate || undefined,
       selectedProductIds: selectedProducts.map((p) => p._id),
       selectedCategoryIds: selectedCategories,
       createdAt: Date.now(),
@@ -295,7 +309,7 @@ export function CreatePromotionPage({ business }: CreatePromotionPageProps) {
             <BackArrowIcon className="w-4 h-4" color="#0F172A" />
           </button>
           <h1 className="text-[18px] font-bold text-[#0F172A] leading-none">
-            Create Promotion
+            {editId ? "Update Promotion" : "Create Promotion"}
           </h1>
         </div>
 
@@ -479,10 +493,25 @@ export function CreatePromotionPage({ business }: CreatePromotionPageProps) {
                       <input
                         type="date"
                         value={endDate}
+                        disabled={noEndDate}
                         onChange={(e) => setEndDate(e.target.value)}
-                        className="w-full h-12 px-3 rounded-[8px] bg-[#F8FAFC] border border-[#E2E8F0] text-[14px] text-[#0F172A] focus:outline-none focus:border-[#3DAC35]"
+                        className="w-full h-12 px-3 rounded-[8px] bg-[#F8FAFC] border border-[#E2E8F0] text-[14px] text-[#0F172A] focus:outline-none focus:border-[#3DAC35] disabled:opacity-50 disabled:cursor-not-allowed"
                       />
                     </div>
+                    <label className="flex items-center gap-2 cursor-pointer pt-0.5">
+                      <input
+                        type="checkbox"
+                        checked={noEndDate}
+                        onChange={(e) => {
+                          setNoEndDate(e.target.checked);
+                          if (e.target.checked) setEndDate("");
+                        }}
+                        className="w-4 h-4 rounded accent-[#3DAC35]"
+                      />
+                      <span className="text-[13px] font-medium text-[#334155]">
+                        No end date (runs until disabled)
+                      </span>
+                    </label>
                   </div>
                 </div>
               </div>
@@ -876,6 +905,36 @@ export function CreatePromotionPage({ business }: CreatePromotionPageProps) {
                       placeholder="ex SAVE 20"
                       className="w-full h-12 px-3.5 rounded-[8px] bg-[#F8FAFC] border border-[#E2E8F0] text-[18px] font-bold tracking-wider text-[#0F172A] placeholder:text-[#94A3B8] placeholder:font-light focus:outline-none focus:border-[#3DAC35] focus:ring-1 focus:ring-[#3DAC35]"
                     />
+                    <label className="flex items-center justify-between gap-3 pt-1 cursor-pointer select-none">
+                      <span className="flex flex-col">
+                        <span className="text-[14px] font-semibold text-[#334155]">
+                          Apply by default
+                        </span>
+                        <span className="text-[12px] text-[#64748B]">
+                          Auto-apply this coupon at checkout without customer entering code
+                        </span>
+                      </span>
+                      <span className="relative inline-block w-11 h-6 shrink-0">
+                        <input
+                          type="checkbox"
+                          checked={applyByDefault}
+                          onChange={(e) => setApplyByDefault(e.target.checked)}
+                          className="sr-only"
+                        />
+                        <span
+                          onClick={() => setApplyByDefault(!applyByDefault)}
+                          className={`block w-11 h-6 rounded-full transition-colors ${
+                            applyByDefault ? "bg-[#3DAC35]" : "bg-[#CBD5E1]"
+                          }`}
+                        />
+                        <span
+                          onClick={() => setApplyByDefault(!applyByDefault)}
+                          className={`absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
+                            applyByDefault ? "translate-x-5" : ""
+                          }`}
+                        />
+                      </span>
+                    </label>
                   </div>
                 </div>
               </section>
@@ -929,7 +988,7 @@ export function CreatePromotionPage({ business }: CreatePromotionPageProps) {
               onClick={handleStep2Submit}
               className="w-full h-[52px] rounded-[8px] bg-[#0F172A] hover:bg-slate-800 active:scale-[0.99] text-white font-bold text-[16px] flex items-center justify-center shadow-sm transition-all"
             >
-              Create Offer
+              {editId ? "Update Promotion" : "Create Offer"}
             </button>
             <button
               type="button"
