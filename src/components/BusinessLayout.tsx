@@ -8,6 +8,8 @@ import {
 } from "lucide-react";
 import whatscartPoweredLogoUrl from "../assets/figma/whatscart-powered-logo.svg";
 import { CouponIcon } from "./promotions/PromotionIcons";
+import { NotificationsBell } from "./NotificationsBell";
+import { useOrderNotifications } from "@/hooks/useOrderNotifications";
 
 const ADMIN_ACCENT = "#3DAC35";
 
@@ -28,6 +30,8 @@ interface BusinessLayoutProps {
 
 export function BusinessLayout({ children, business }: BusinessLayoutProps) {
   const location = useLocation();
+
+  useOrderNotifications();
 
   const hideBottomNav = (() => {
     const p = location.pathname;
@@ -76,6 +80,7 @@ export function BusinessLayout({ children, business }: BusinessLayoutProps) {
   return (
     <div className="min-h-screen flex justify-center">
       <div className="w-full bg-white min-h-screen flex flex-col max-w-[428px] mx-auto">
+        <NotificationsBell />
         <div className={`flex-1 ${hideBottomNav ? "" : "pb-24"}`}>{children}</div>
 
         <div className="fixed left-[-21px] bottom-0 scale-[0.8] z-50 hidden md:block">
