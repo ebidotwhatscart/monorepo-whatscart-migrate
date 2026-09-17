@@ -3,8 +3,8 @@
     "relation": ["delegate_permission/common.handle_all_urls"],
     "target": {
       "namespace": "android_app",
-      "package_name": "app.netlify.whats_cart_dev.twa",
-      "sha256_cert_fingerprints": ["C7:B1:91:26:73:01:6C:47:60:A7:53:86:76:32:1C:BD:B8:3F:EA:2E:49:7F:3F:36:F4:80:DE:80:A1:69:2A:2C"]
+      "package_name": "app.whatscart.twa",
+      "sha256_cert_fingerprints": []
     }
   }
 ]

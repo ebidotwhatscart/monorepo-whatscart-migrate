@@ -5,6 +5,10 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [
       {
+        source: '/.well-known/assetlinks.json',
+        destination: '/assetlinks',
+      },
+      {
         source: '/firebase-media/:path*',
         destination: 'https://googleapis.com*',
       },

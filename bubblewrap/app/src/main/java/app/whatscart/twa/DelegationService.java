@@ -1,4 +1,4 @@
-package app.netlify.whats_cart_dev.twa;
+package app.whatscart.twa;
 
 
 
@@ -11,4 +11,3 @@ public class DelegationService extends
         
     }
 }
-

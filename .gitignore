@@ -3,24 +3,46 @@ node_modules/
 .serena/
 .firebase/
 .vercel/
+.opencode/
+
+# Local environment and generated service logs
+.env
+.env.*
+!.env.example
 firebase-debug.log
 firebase-debug.*.log
 firestore-debug.log
 firestore-debug.*.log
+
+# Build and tool output (including Bubblewrap/Android builds)
 dist/
-build/
+**/build/
+**/.gradle/
+**/.cxx/
+**/.externalNativeBuild/
+**/local.properties
 *.tsbuildinfo
+
+# Android artifacts and local signing material
 *.apk
 *.aab
 *.idsig
 *.jks
 *.keystore
-bubblewrap/.gradle/
-bubblewrap/app/build/
-bubblewrap/local.properties
-.env
-.env.*
-!.env.example
-.vercel
-.env*
-.opencode/
+
+# Bubblewrap can generate a complete Android project in the repository root.
+# The maintained Android project lives under bubblewrap/.
+/.gradle/
+/app/
+/gradle/
+/settings.gradle
+/build.gradle
+/gradle.properties
+/gradlew
+/gradlew.bat
+/manifest-checksum.txt
+/store_icon.png
+/twa-manifest.json
+/app-release-signed.apk
+/app-release-unsigned-aligned.apk
+/app-release-bundle.aab
