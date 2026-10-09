@@ -22,5 +22,16 @@
       "port": 4000
     },
     "singleProjectMode": true
+  },
+  "apphosting": {
+    "backendId": "whatscart-testing",
+    "rootDir": "/",
+    "ignore": [
+      "node_modules",
+      ".git",
+      "firebase-debug.log",
+      "firebase-debug.*.log",
+      "functions"
+    ]
   }
 }
