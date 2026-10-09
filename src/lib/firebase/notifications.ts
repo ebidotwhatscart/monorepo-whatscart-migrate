@@ -39,15 +39,33 @@ export async function sendPushToOwner(
     .doc(ownerId)
     .collection("devices")
     .get();
-  const tokens = snapshot.docs
-    .map((document) => document.data().token)
-    .filter((token): token is string => typeof token === "string" && token.length > 0);
+  const devices = snapshot.docs.filter((document) => {
+    const token = document.data().token;
+    return typeof token === "string" && token.length > 0;
+  });
   const messaging = getAdminMessaging();
-  if (!tokens.length || !messaging) return { sent: 0 };
-  const result = await messaging.sendEach(
-    tokens.map((token) => ({ token, ...message })),
-  );
-  return { sent: result.responses.filter((response) => response.success).length };
+  if (!devices.length || !messaging) return { sent: 0 };
+
+  let sent = 0;
+  for (let start = 0; start < devices.length; start += 500) {
+    const batch = devices.slice(start, start + 500);
+    const result = await messaging.sendEach(
+      batch.map((device) => ({ token: device.data().token as string, ...message })),
+    );
+    const staleDevices = result.responses.flatMap((response, index) => {
+      if (response.success) {
+        sent += 1;
+        return [];
+      }
+      const code = response.error?.code;
+      return code === "messaging/registration-token-not-registered" ||
+        code === "messaging/invalid-registration-token"
+        ? [batch[index]]
+        : [];
+    });
+    await Promise.all(staleDevices.map((device) => device.ref.delete()));
+  }
+  return { sent };
 }
 
 export async function notifyNewOrder(

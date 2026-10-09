@@ -1,4 +1,10 @@
-import { getMessaging, getToken, onMessage } from "firebase/messaging";
+import {
+  deleteToken,
+  getMessaging,
+  getToken,
+  isSupported,
+  onMessage,
+} from "firebase/messaging";
 
 import { getFirebaseClient } from "./client";
 
@@ -12,14 +18,25 @@ export async function requestFcmToken(registration: ServiceWorkerRegistration) {
   if (!client) return null;
   const vapidKey = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY;
   if (!vapidKey) return null;
-  if (typeof Notification !== "undefined" && Notification.permission !== "granted") {
-    const permission = await Notification.requestPermission();
-    if (permission !== "granted") return null;
-  }
+  if (typeof Notification === "undefined" || Notification.permission !== "granted") return null;
+  if (!(await isSupported())) return null;
   return getToken(getMessaging(client.app), {
     vapidKey,
     serviceWorkerRegistration: registration,
   });
+}
+
+/** Call from a user gesture so browsers can show their notification permission prompt. */
+export async function enablePushNotifications(registration: ServiceWorkerRegistration) {
+  if (typeof Notification === "undefined" || !(await isSupported())) return null;
+  const permission =
+    Notification.permission === "granted"
+      ? "granted"
+      : await Notification.requestPermission();
+  if (permission !== "granted") return null;
+  const token = await requestFcmToken(registration);
+  if (token) await registerPushDevice(token);
+  return token;
 }
 
 export function subscribeForegroundOrderMessages(
@@ -27,7 +44,12 @@ export function subscribeForegroundOrderMessages(
 ) {
   const client = getFirebaseClient();
   if (!client) return () => {};
-  return onMessage(getMessaging(client.app), handler);
+  if (typeof window === "undefined") return () => {};
+  try {
+    return onMessage(getMessaging(client.app), handler);
+  } catch {
+    return () => {};
+  }
 }
 
 async function deviceRequest(method: "POST" | "DELETE", token: string) {
@@ -55,4 +77,20 @@ export async function registerPushDevice(token: string) {
 
 export async function unregisterPushDevice(token: string) {
   await deviceRequest("DELETE", token);
+}
+
+export async function unregisterCurrentPushDevice(
+  registration?: ServiceWorkerRegistration,
+) {
+  const client = getFirebaseClient();
+  const vapidKey = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY;
+  if (!client?.auth.currentUser || !vapidKey || !(await isSupported())) return;
+  const messaging = getMessaging(client.app);
+  const token = await getToken(messaging, {
+    vapidKey,
+    ...(registration ? { serviceWorkerRegistration: registration } : {}),
+  });
+  if (!token) return;
+  await unregisterPushDevice(token);
+  await deleteToken(messaging);
 }

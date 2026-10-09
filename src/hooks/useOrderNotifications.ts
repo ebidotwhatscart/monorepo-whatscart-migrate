@@ -5,7 +5,6 @@ import {
   registerPushDevice,
   requestFcmToken,
   subscribeForegroundOrderMessages,
-  unregisterPushDevice,
 } from "@/lib/firebase/client-messaging";
 
 import { useRegisterSW } from "./useRegisterSW";
@@ -37,20 +36,20 @@ export function useOrderNotifications() {
     return subscribeForegroundOrderMessages((message) => {
       const title = message.notification?.title ?? "New order";
       const body = message.notification?.body ?? "";
-      if (typeof window !== "undefined" && "Notification" in window) {
-        if (window.Notification?.permission === "granted") {
-          new window.Notification(title, { body, icon: "/pwa-192x192.png" });
-        }
+      if (
+        typeof window !== "undefined" &&
+        window.Notification?.permission === "granted" &&
+        liveRegistration
+      ) {
+        const url = message.data?.url ?? "/dashboard/orders";
+        void liveRegistration.showNotification(title, {
+          body,
+          icon: "/pwa-192x192.png",
+          badge: "/pwa-192x192.png",
+          data: { url },
+        });
       }
     });
-  }, [isSignedIn]);
-
-  useEffect(() => {
-    if (isSignedIn) return;
-    if (liveRegistration) {
-      void clearToken();
-    }
-    return () => {};
   }, [isSignedIn]);
 }
 
@@ -65,22 +64,22 @@ async function registerToken(registration: ServiceWorkerRegistration | null) {
   }
 }
 
-async function clearToken() {
-  const { getFirebaseClient } = await import("@/lib/firebase/client");
-  const client = getFirebaseClient();
-  const user = client?.auth.currentUser;
-  if (!user) return;
-  const { getToken, deleteToken, getMessaging } = await import("firebase/messaging");
-  try {
-    const messaging = getMessaging(client.app);
-    const current = await getToken(messaging, {
-      serviceWorkerRegistration: liveRegistration ?? undefined,
-    });
-    if (current) {
-      await unregisterPushDevice(current);
-      await deleteToken(messaging);
+export async function enableOrderPushNotifications() {
+  if (!liveRegistration) {
+    if (!("serviceWorker" in navigator)) return false;
+    try {
+      liveRegistration = await navigator.serviceWorker.ready;
+    } catch {
+      return false;
     }
-  } catch {
-    return;
+  }
+  try {
+    const { enablePushNotifications } = await import(
+      "@/lib/firebase/client-messaging"
+    );
+    return Boolean(await enablePushNotifications(liveRegistration));
+  } catch (error) {
+    console.error("Push registration failed:", error);
+    return false;
   }
 }

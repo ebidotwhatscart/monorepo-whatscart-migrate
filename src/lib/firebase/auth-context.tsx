@@ -104,6 +104,16 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(async () => {
     const client = getFirebaseClient();
     if (!client) return;
+    try {
+      const { unregisterCurrentPushDevice } = await import("./client-messaging");
+      const registration =
+        "serviceWorker" in navigator
+          ? await navigator.serviceWorker.getRegistration("/")
+          : undefined;
+      await unregisterCurrentPushDevice(registration);
+    } catch (error) {
+      console.error("Push device cleanup failed:", error);
+    }
     await firebaseSignOut(client.auth);
     await syncSession(null);
   }, []);

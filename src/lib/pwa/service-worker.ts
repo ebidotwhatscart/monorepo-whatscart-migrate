@@ -22,16 +22,20 @@ if ("importScripts" in self) {
     });
     self.addEventListener("notificationclick", function (event) {
       event.notification.close();
-      var targetUrl = (event.notification.data && event.notification.data.url) || "/dashboard/orders";
+      var requestedUrl = (event.notification.data && event.notification.data.url) || "/dashboard/orders";
+      var targetUrl = new URL(requestedUrl, self.location.origin);
+      if (targetUrl.origin !== self.location.origin) {
+        targetUrl = new URL("/dashboard/orders", self.location.origin);
+      }
       event.waitUntil(
         clients.matchAll({ type: "window", includeUncontrolled: true }).then(function (windowClients) {
           for (var i = 0; i < windowClients.length; i++) {
             var client = windowClients[i];
-            if ("navigate" in client) {
-              return client.navigate(targetUrl).then(function () { return client.focus(); });
+            if (new URL(client.url).origin === self.location.origin && "navigate" in client) {
+              return client.navigate(targetUrl.href).then(function () { return client.focus(); });
             }
           }
-          return clients.openWindow(targetUrl);
+          return clients.openWindow(targetUrl.href);
         })
       );
     });
