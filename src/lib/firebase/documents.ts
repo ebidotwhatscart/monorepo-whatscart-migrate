@@ -51,6 +51,10 @@ export function businessValue(snapshot: DocumentSnapshot<DocumentData>) {
   const businessType = business.businessType;
   return {
     ...business,
+    customTemplateId:
+      typeof business.customTemplateId === "string"
+        ? business.customTemplateId
+        : null,
     businessType:
       typeof businessType === "string"
         ? normalizeBusinessType(businessType as StoredBusinessType)

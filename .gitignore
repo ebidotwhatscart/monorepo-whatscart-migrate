@@ -9,6 +9,7 @@ node_modules/
 .env
 .env.*
 !.env.example
+!.env.staging.example
 firebase-debug.log
 firebase-debug.*.log
 firestore-debug.log
@@ -45,13 +46,3 @@ dist/
 /app-release-signed.apk
 /app-release-unsigned-aligned.apk
 /app-release-bundle.aab
-
-bubblewrap/.gradle/
-bubblewrap/app/build/
-bubblewrap/local.properties
-.env
-.env.*
-!.env.example
-.vercel
-.env*
-.opencode/

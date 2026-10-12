@@ -68,6 +68,7 @@ interface Business {
   fssaiDocId?: Id<"_storage">;
   fssaiDocUrl?: string | null;
   upiId?: string;
+  customTemplateId?: string | null;
 }
 
 interface StoreSettingsProps {
@@ -193,6 +194,7 @@ export function StoreSettings({ business, showHeader = true }: StoreSettingsProp
   const [fssaiPdfFile, setFssaiPdfFile] = useState<File | null>(null);
   const [isUploadingFssai, setIsUploadingFssai] = useState(false);
   const [upiId, setUpiId] = useState(business.upiId || "");
+  const [customTemplateId, setCustomTemplateId] = useState(business.customTemplateId || "");
 
   useEffect(() => {
     stateRef.current = {
@@ -209,6 +211,7 @@ export function StoreSettings({ business, showHeader = true }: StoreSettingsProp
       fssaiNumber,
       fssaiPdfFile,
       upiId,
+      customTemplateId,
     };
   });
 
@@ -277,6 +280,7 @@ export function StoreSettings({ business, showHeader = true }: StoreSettingsProp
           fssaiNumber: s.fssaiNumber || undefined,
           fssaiDocId: fssaiDocId || undefined,
           upiId: s.upiId || undefined,
+          customTemplateId: s.customTemplateId || null,
         });
         if (s.logoFile) {
           setLogoFile(null);
@@ -628,6 +632,22 @@ export function StoreSettings({ business, showHeader = true }: StoreSettingsProp
               <p className="mt-1 text-right text-xs text-gray-400">
                 {description.length}/250
               </p>
+            </div>
+            <div className="border-t border-gray-100 pt-4">
+              <label className="block text-xs font-semibold text-gray-500 mb-1.5">Custom template ID</label>
+              <input
+                type="text"
+                value={customTemplateId}
+                onChange={(e) => {
+                  const value = e.target.value.trim().toLowerCase();
+                  setCustomTemplateId(value);
+                  triggerAutoSave("customTemplateId");
+                }}
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm outline-none focus:border-green-400 focus:ring-1 focus:ring-green-400 bg-white"
+                placeholder="Leave empty to use the standard storefront"
+                aria-label="Custom template ID"
+              />
+              <p className="mt-1 text-xs text-gray-400">Use <strong>nilav</strong> to show the Nilav storefront. Empty keeps the standard design.</p>
             </div>
             {/* Logo */}
             <div>

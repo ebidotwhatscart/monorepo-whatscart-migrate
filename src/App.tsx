@@ -23,6 +23,7 @@ import { AdminProfilePage } from "./components/AdminProfilePage";
 import { AnalyticsPage } from "./components/AnalyticsPage";
 import { BusinessLayout } from "./components/BusinessLayout";
 import { Storefront } from "./components/Storefront";
+import { NilavTemplate } from "./components/NilavTemplate";
 import { StorefrontNotFound } from "./components/StorefrontNotFound";
 import { StoreCartPage } from "./components/StoreCartPage";
 import { PublicCatalogPage } from "./components/PublicCatalogPage";
@@ -84,15 +85,20 @@ export default function App({
             {isMainHost && isAdminDashboardPath && (
               <Route path="/dashboard/*" element={<RedirectToAppDashboard />} />
             )}
-            <Route path="/store/:slug" element={<Storefront />} />
-            <Route path="/store/:slug/cart" element={<StoreCartPage />} />
+            <Route path="/store/:slug" element={<NilavTemplate fallback={<Storefront />} />} />
+            <Route path="/store/:slug/cart" element={<NilavTemplate fallback={<StoreCartPage />} />} />
             <Route
               path="/store/:slug/catalog/:catalogId"
               element={<PublicCatalogPage />}
             />
             <Route path="/store/:slug/cart/:cartId" element={<Cart />} />
             <Route path="/store/:slug/review/:token" element={<ReviewFormPage />} />
-            <Route path="/store/:slug/products" element={<StorefrontNotFound />} />
+            <Route path="/store/:slug/products" element={<NilavTemplate fallback={<StorefrontNotFound />} />} />
+            <Route path="/store/:slug/about" element={<NilavTemplate fallback={<StorefrontNotFound />} />} />
+            <Route path="/store/:slug/contact" element={<NilavTemplate fallback={<StorefrontNotFound />} />} />
+            <Route path="/store/:slug/privacy" element={<NilavTemplate fallback={<StorefrontNotFound />} />} />
+            <Route path="/store/:slug/privacy-policy" element={<NilavTemplate fallback={<StorefrontNotFound />} />} />
+            <Route path="/store/:slug/terms" element={<NilavTemplate fallback={<StorefrontNotFound />} />} />
             <Route path="/store/:slug/catalog" element={<StorefrontNotFound />} />
             <Route
               path="/store/:slug/:fileId"
@@ -100,28 +106,33 @@ export default function App({
             />
             <Route
               path="/store/:slug/products/:productId"
-              element={<ProductDetail />}
+              element={<NilavTemplate fallback={<ProductDetail />} />}
             />
             {tenantSlug && (
               <>
-                <Route path="/" element={<Storefront />} />
-                <Route path="/cart" element={<StoreCartPage />} />
+                <Route path="/" element={<NilavTemplate fallback={<Storefront />} />} />
+                <Route path="/about" element={<NilavTemplate fallback={<StorefrontNotFound />} />} />
+                <Route path="/contact" element={<NilavTemplate fallback={<StorefrontNotFound />} />} />
+                <Route path="/privacy" element={<NilavTemplate fallback={<StorefrontNotFound />} />} />
+                <Route path="/privacy-policy" element={<NilavTemplate fallback={<StorefrontNotFound />} />} />
+                <Route path="/terms" element={<NilavTemplate fallback={<StorefrontNotFound />} />} />
+                <Route path="/cart" element={<NilavTemplate fallback={<StoreCartPage />} />} />
                 <Route path="/catalog/:catalogId" element={<PublicCatalogPage />} />
                 <Route path="/cart/:cartId" element={<Cart />} />
                 <Route path="/review/:token" element={<ReviewFormPage />} />
-                <Route path="/products" element={<StorefrontNotFound />} />
+                <Route path="/products" element={<NilavTemplate fallback={<StorefrontNotFound />} />} />
                 <Route path="/catalog" element={<StorefrontNotFound />} />
                 <Route path="/:fileId" element={<ReferenceImagePage />} />
-                <Route path="/products/:productId" element={<ProductDetail />} />
+                <Route path="/products/:productId" element={<NilavTemplate fallback={<ProductDetail />} />} />
                 <Route path="*" element={<StorefrontNotFound />} />
               </>
             )}
             <Route path="/store/:slug/*" element={<StorefrontNotFound />} />
             <Route path="/review/:token" element={<ReviewFormPage />} />
             {isAppHost && <Route path="/" element={<Navigate to="/dashboard" replace />} />}
-            <Route path="/checkout" element={<CheckoutPage />} />
-            <Route path="/order-success" element={<OrderSuccessPage />} />
-            <Route path="/my-orders" element={<OrderHistoryPage />} />
+            <Route path="/checkout" element={<NilavTemplate fallback={<CheckoutPage />} />} />
+            <Route path="/order-success" element={<NilavTemplate fallback={<OrderSuccessPage />} />} />
+            <Route path="/my-orders" element={tenantSlug ? <NilavTemplate fallback={<OrderHistoryPage />} /> : <OrderHistoryPage />} />
             <Route path="/*" element={<MainApp />} />
           </Routes>
           <Toaster

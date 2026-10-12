@@ -207,6 +207,9 @@ export async function updateOwnedBusiness(
   if (body.upiId !== undefined) {
     patch.upiId = optionalString(body.upiId, "upiId", 200);
   }
+  if (body.customTemplateId !== undefined) {
+    patch.customTemplateId = optionalString(body.customTemplateId, "customTemplateId", 80) ?? null;
+  }
 
   if (body.featuredProductIds !== undefined) {
     if (
@@ -325,6 +328,7 @@ export async function createOwnedBusiness(
         brandPalette: validateBrandPalette(body.brandPalette),
         businessType,
         createdAt,
+        customTemplateId: null,
         description: optionalString(body.description, "description", 1_000),
         isEnabled: true,
         logoId,

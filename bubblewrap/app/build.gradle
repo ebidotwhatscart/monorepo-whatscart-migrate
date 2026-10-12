@@ -15,14 +15,19 @@
  */
 
 import groovy.xml.MarkupBuilder
+import groovy.json.JsonOutput
 
 plugins {
     id 'com.android.application'
 }
 
+def configuredRootDomain = System.getenv('NEXT_PUBLIC_ROOT_DOMAIN') ?: 'whatscart.in'
+def configuredTwaHost = System.getenv('TWA_HOST') ?: "app.${configuredRootDomain}"
+def configuredTwaOrigin = "https://${configuredTwaHost}"
+
 def twaManifest = [
     applicationId: 'app.whatscart.twa',
-    hostName: 'app.whatscart.in', // The domain being opened in the TWA.
+    hostName: configuredTwaHost, // The domain being opened in the TWA.
     launchUrl: '/', // The start path for the TWA. Must be relative to the domain.
     name: 'WhatsCart', // The application name.
     launcherName: 'WhatsCart', // The name shown on the Android Launcher.
@@ -76,12 +81,12 @@ android {
             // The URL the Web Manifest for the Progressive Web App that the TWA points to. This
             // is used by Chrome OS and Meta Quest to open the Web version of the PWA instead of
             // the TWA, as it will probably give a better user experience for non-mobile devices.
-            resValue "string", "webManifestUrl", 'https://app.whatscart.in/manifest.webmanifest'
+            resValue "string", "webManifestUrl", "${configuredTwaOrigin}/manifest.webmanifest"
         
 
         
             // This is used by Meta Quest.
-            resValue "string", "fullScopeUrl", 'https://app.whatscart.in/'
+            resValue "string", "fullScopeUrl", "${configuredTwaOrigin}/"
         
 
         
@@ -147,6 +152,11 @@ android {
 
         resValue "bool", "enableSiteSettingsShortcut", twaManifest.enableSiteSettingsShortcut
         resValue "string", "orientation", twaManifest.orientation
+
+        resValue "string", "assetStatements", JsonOutput.toJson([[
+            relation: ['delegate_permission/common.handle_all_urls'],
+            target: [namespace: 'web', site: configuredTwaOrigin],
+        ]])
 
         
     }
