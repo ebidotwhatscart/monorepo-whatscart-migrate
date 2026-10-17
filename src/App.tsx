@@ -70,7 +70,7 @@ export default function App({
   const hostname = isBrowser ? window.location.hostname : initialHostname;
   const pathname = isBrowser ? window.location.pathname : initialPathname;
   const isSuperAdminHost = hostname === adminHostname;
-  const isAppHost = hostname === appHostname;
+  const isAppHost = hostname === appHostname || hostname === "localhost";
   const isMainHost = [publicRootDomain, `www.${publicRootDomain}`].includes(hostname);
   const tenantSlug = getTenantSlug(hostname);
   const isAdminDashboardPath = pathname.startsWith("/dashboard");

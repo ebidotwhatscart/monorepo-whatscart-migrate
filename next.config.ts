@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  allowedDevOrigins: ['app.lvh.me', 'admin.lvh.me', '*.lvh.me'],
+  allowedDevOrigins: ['app.localhost', 'app.lvh.me', 'admin.lvh.me', '*.lvh.me'],
   async rewrites() {
     return [
       {

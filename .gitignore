@@ -30,10 +30,11 @@ dist/
 *.idsig
 *.jks
 *.keystore
-# Bubblewrap can generate a complete Android project in the repository root.
+# Legacy Bubblewrap project relocated out of the root so Next can discover src/app.
 # The maintained Android project lives under bubblewrap/.
 /.gradle/
 /app/
+/android-app-legacy/
 /gradle/
 /settings.gradle
 /build.gradle
