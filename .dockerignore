@@ -1,0 +1,38 @@
+node_modules
+.next
+.git
+.gitignore
+.opencode
+.serena
+.vercel
+.github
+
+# Secrets: exclude all env files, keep only the public build file
+.env*
+!.env.build
+
+# Android / TWA build artifacts
+android-app-legacy
+bubblewrap
+.gradle
+build.gradle
+gradle
+gradlew
+gradlew.bat
+*.apk
+*.aab
+*.idsig
+*.keystore
+twa-manifest.json
+manifest-checksum.txt
+
+# Firebase / local logs and scratch
+firebase-debug.log
+firestore-debug.log
+scratch_figma_881.json
+*.tsbuildinfo
+
+# Docs and misc
+docs
+*.md
+!README.md
