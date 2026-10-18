@@ -1,5 +1,9 @@
 import { BUSINESS_TYPE_CONFIG } from "./businessTypeConfig";
-import type { BusinessType, ProductTypeDetails } from "../../types/product";
+import {
+  isHandicraftFamily,
+  type BusinessType,
+  type ProductTypeDetails,
+} from "../../types/product";
 
 export function getStorefrontCopy(businessType: BusinessType) {
   return BUSINESS_TYPE_CONFIG[businessType].storefront;
@@ -22,7 +26,7 @@ export function getProductMetaChips(
     ].filter(Boolean);
   }
 
-  if (businessType === "handicrafts") {
+  if (isHandicraftFamily(businessType)) {
     return [
       details?.audience ? capitalize(details.audience) : null,
       details?.customizationEnabled ? "Personalizable" : null,

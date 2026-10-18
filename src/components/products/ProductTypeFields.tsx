@@ -1,11 +1,12 @@
 import { ChevronDown, Trash2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { BUSINESS_TYPE_CONFIG } from "./businessTypeConfig";
-import type {
-  BusinessType,
-  DietaryClassification,
-  ProductAudience,
-  ProductCustomizationOption,
+import {
+  isHandicraftFamily,
+  type BusinessType,
+  type DietaryClassification,
+  type ProductAudience,
+  type ProductCustomizationOption,
 } from "../../types/product";
 
 type SizeRow = {
@@ -188,7 +189,7 @@ export function ProductTypeFields({
       <h3 className="text-[15px] font-bold text-slate-800">Product Details</h3>
 
       <div className="mt-4 space-y-4">
-        {businessType === "handicrafts" && (
+        {isHandicraftFamily(businessType) && (
           <Field label="Audience">
             <ChoiceGroup
               options={config.audienceOptions ?? []}

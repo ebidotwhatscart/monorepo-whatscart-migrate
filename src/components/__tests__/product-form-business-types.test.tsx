@@ -180,6 +180,21 @@ describe("ProductForm business types", () => {
     ).toBeInTheDocument();
   });
 
+  it("renders selfcare personalization like handicrafts", () => {
+    render(
+      <ProductForm
+        businessId={"biz_1" as never}
+        businessType={"selfcare" as never}
+        onCancel={vi.fn()}
+        onSuccess={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText("Audience")).toBeInTheDocument();
+    expect(screen.getByText("Allow Selfcare Personalization")).toBeInTheDocument();
+    expect(screen.queryByText("Dietary Classification")).not.toBeInTheDocument();
+  });
+
   it("submits bakery product type details with canonical values", async () => {
     const user = userEvent.setup();
 

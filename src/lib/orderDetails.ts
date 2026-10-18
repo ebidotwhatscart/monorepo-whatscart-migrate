@@ -1,4 +1,5 @@
 import {
+  isHandicraftFamily,
   normalizeBusinessType,
   type BusinessType,
   type StoredBusinessType,
@@ -57,7 +58,7 @@ export function getCustomizationSectionTitle(businessType: BusinessType) {
     return "Cake Customization";
   }
 
-  if (businessType === "handicrafts") {
+  if (isHandicraftFamily(businessType)) {
     return "Personalization";
   }
 

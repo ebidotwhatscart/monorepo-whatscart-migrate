@@ -11,6 +11,7 @@ import {
   PRODUCT_CUSTOMIZATION_OPTIONS,
   PRODUCT_SIZE_FORMATS,
   RETURN_ACCEPTED_CONDITIONS,
+  isHandicraftFamily,
   normalizeBusinessType,
   type BusinessType,
   type StoredBusinessType,
@@ -139,7 +140,7 @@ function validateProductTypeDetails(
   if (businessType === "home_bakery" && (audience || sizeFormat)) {
     throw new Error("Bakery product details are invalid.");
   }
-  if (businessType === "handicrafts" && (dietaryClassification || sizeFormat)) {
+  if (isHandicraftFamily(businessType) && (dietaryClassification || sizeFormat)) {
     throw new Error("Handicraft product details are invalid.");
   }
   if (options.length && customizationEnabled !== true) {
@@ -152,7 +153,7 @@ function validateProductTypeDetails(
     throw new Error("Bakery customization options are invalid.");
   }
   if (
-    businessType === "handicrafts" &&
+    isHandicraftFamily(businessType) &&
     options.some((option) => !HANDICRAFT_CUSTOMIZATION_OPTIONS.has(option))
   ) {
     throw new Error("Handicraft customization options are invalid.");

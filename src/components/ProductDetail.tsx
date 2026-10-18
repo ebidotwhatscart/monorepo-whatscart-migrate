@@ -32,6 +32,7 @@ import { getTenantSlug, productSlug, storefrontPath, storefrontUrl } from "../li
 import { useRuntimeHostname } from "../context/RuntimeLocationContext";
 
 import {
+  isHandicraftFamily,
   normalizeBusinessType,
   type BusinessType,
   type ProductCustomizationOption,
@@ -826,7 +827,7 @@ export function ProductDetail() {
                   <div className="space-y-6">
                     <div>
                       <p className="text-sm font-normal leading-5 text-[#5A6061]">
-                        {businessType === "handicrafts"
+                        {isHandicraftFamily(businessType)
                           ? "Personalization Add-ons"
                           : "Customization Add-ons"}
                       </p>
@@ -1302,7 +1303,7 @@ function getProductInfoRows(
     });
   }
 
-  if (businessType === "handicrafts" && details.customizationEnabled) {
+  if (isHandicraftFamily(businessType) && details.customizationEnabled) {
     rows.push({
       label: "Personalization",
       value: formatCustomizationOptions(businessType, details.customizationOptions),

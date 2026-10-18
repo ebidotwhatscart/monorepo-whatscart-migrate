@@ -1,8 +1,9 @@
 import { BUSINESS_TYPE_CONFIG } from "../components/products/businessTypeConfig";
-import type {
-  BusinessType,
-  ProductCustomizationOption,
-  ProductTypeDetails,
+import {
+  isHandicraftFamily,
+  type BusinessType,
+  type ProductCustomizationOption,
+  type ProductTypeDetails,
 } from "../types/product";
 
 export interface ProductCustomizationPayload {
@@ -74,7 +75,7 @@ export function getCustomizationTextFieldLabel(
     return getCustomizationOptionLabel(businessType, selectedTextOptions[0]!);
   }
 
-  if (businessType === "handicrafts") {
+  if (isHandicraftFamily(businessType)) {
     return "Personalization details";
   }
 
@@ -82,7 +83,7 @@ export function getCustomizationTextFieldLabel(
 }
 
 export function getCustomizationTextPlaceholder(businessType: BusinessType) {
-  if (businessType === "handicrafts") {
+  if (isHandicraftFamily(businessType)) {
     return "Share the name, date, quote, or stitch details you want added...";
   }
 
@@ -98,7 +99,7 @@ export function getCustomizationImageFieldLabel(
     return getCustomizationOptionLabel(businessType, selectedImageOptions[0]!);
   }
 
-  return businessType === "handicrafts" ? "Reference image" : "Upload image";
+  return isHandicraftFamily(businessType) ? "Reference image" : "Upload image";
 }
 
 export function encodeProductCustomization(payload: ProductCustomizationPayload) {

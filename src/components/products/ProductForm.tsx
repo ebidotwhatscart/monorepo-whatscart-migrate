@@ -21,13 +21,14 @@ import {
   type VariantFormData,
   type VariationOption,
 } from "./ProductVariationSection";
-import type {
-  BusinessType,
-  DietaryClassification,
-  ProductAudience,
-  ProductCustomizationOption,
-  ProductTypeDetails,
-  ProductReturnPolicy,
+import {
+  isHandicraftFamily,
+  type BusinessType,
+  type DietaryClassification,
+  type ProductAudience,
+  type ProductCustomizationOption,
+  type ProductTypeDetails,
+  type ProductReturnPolicy,
 } from "../../types/product";
 
 type ProductFormProduct = {
@@ -209,7 +210,7 @@ export function ProductForm({
     : [];
 
   useEffect(() => {
-    if (!hasColorVariants || businessType === "handicrafts") {
+    if (!hasColorVariants || isHandicraftFamily(businessType)) {
       return;
     }
 
@@ -248,7 +249,7 @@ export function ProductForm({
   const handleHasColorVariantsChange = (enabled: boolean) => {
     setHasColorVariants(enabled);
     if (enabled && existingVariants.length > 0 && variants.length === 0) {
-      const isSimplePrice = businessType === "handicrafts";
+      const isSimplePrice = isHandicraftFamily(businessType);
       const mapped = existingVariants.map((v) => ({
         id: v._id,
         _id: v._id,
@@ -274,7 +275,7 @@ export function ProductForm({
       setVariants(mapped);
     } else if (enabled && variants.length === 0) {
       const nextVariant = createEmptyVariant();
-      if (businessType !== "handicrafts" && parentSizeOptions.length > 0) {
+      if (!isHandicraftFamily(businessType) && parentSizeOptions.length > 0) {
         nextVariant.sizes = parentSizeOptions.map((option) => ({ ...option }));
       }
       setVariants([nextVariant]);
@@ -555,7 +556,7 @@ export function ProductForm({
           return !Number.isFinite(parsedPrice) || parsedPrice <= 0;
         });
         const hasIncompleteSizePrice =
-          businessType !== "handicrafts" &&
+          !isHandicraftFamily(businessType) &&
           variant.sizes.some((row) => row.size.trim() && !row.price.trim());
 
         if (!variant.variantType.trim()) {
@@ -1199,7 +1200,7 @@ export function ProductForm({
             sizeFormat={sizeFormat}
             sizeOptions={parentSizeOptions}
             priceError={hasColorVariants ? formErrors.price : undefined}
-            simplePrice={businessType === "handicrafts"}
+            simplePrice={isHandicraftFamily(businessType)}
             variationOptions={(variationOptions ?? config.variationOptions) as VariationOption[]}
             variationOptionsLoading={variationOptions === undefined}
             onAddCustomType={handleAddCustomVariationType}
@@ -1214,7 +1215,7 @@ export function ProductForm({
           />
 
 
-          {businessType === "handicrafts" && (
+          {isHandicraftFamily(businessType) && (
             <section id="product-price-section" className="rounded-2xl bg-white p-4 shadow-sm">
               <h3 className="text-[15px] font-bold text-slate-800">Pricing</h3>
 
