@@ -29,6 +29,7 @@ vi.mock("../../lib/firebase/auth-ui", () => ({
   Unauthenticated: () => null,
   SignInButton: ({ children }: { children: ReactNode }) => children,
   EmailSignInForm: () => null,
+  LogoutButton: () => <button type="button">Log out</button>,
   UserButton: () => null,
 }));
 vi.mock("../../lib/firebase/hooks", () => ({
@@ -96,6 +97,14 @@ describe("SuperAdminPortal", () => {
         isEnabled: false,
       }),
     );
+  });
+
+  it("renders a visible log out control in the admin header", () => {
+    render(<SuperAdminPortal />);
+
+    expect(
+      screen.getByRole("button", { name: /log out/i }),
+    ).toBeInTheDocument();
   });
 
   it("requires a matching email or ID before permanent deletion", async () => {

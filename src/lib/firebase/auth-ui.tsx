@@ -12,6 +12,8 @@ import {
   type ReactNode,
 } from "react";
 
+import { LogOut } from "lucide-react";
+
 import { useFirebaseAuth } from "./auth-context";
 
 type SignInChildProps = {
@@ -137,6 +139,32 @@ export function EmailSignInForm() {
         {isSigningIn ? "Signing in…" : "Sign in with email"}
       </button>
     </form>
+  );
+}
+
+export function LogoutButton({
+  className,
+  label = "Log out",
+}: {
+  className?: string;
+  label?: string;
+}) {
+  const { isLoaded, isSignedIn, signOut } = useFirebaseAuth();
+
+  if (!isLoaded || !isSignedIn) return null;
+
+  return (
+    <button
+      type="button"
+      onClick={() => void signOut()}
+      className={
+        className ??
+        "inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition hover:border-slate-300 hover:text-slate-950 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2"
+      }
+    >
+      <LogOut className="h-4 w-4" aria-hidden="true" />
+      {label}
+    </button>
   );
 }
 

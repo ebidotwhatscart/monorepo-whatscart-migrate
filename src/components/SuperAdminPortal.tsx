@@ -2,6 +2,7 @@ import {
   Authenticated,
   Unauthenticated,
   EmailSignInForm,
+  LogoutButton,
   SignInButton,
   UserButton,
 } from "../lib/firebase/auth-ui";
@@ -123,7 +124,8 @@ function SuperAdminWorkspace() {
           <p className="mt-2 text-slate-600">
             This account is not configured as a WhatsCart super admin.
           </p>
-          <div className="mt-6">
+          <div className="mt-6 flex flex-col items-center gap-3">
+            <LogoutButton className="inline-flex items-center gap-2 rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2" />
             <UserButton />
           </div>
         </div>
@@ -157,6 +159,7 @@ function SuperAdminWorkspace() {
           </div>
           <div className="flex items-center gap-3 text-sm text-slate-600">
             <span className="hidden sm:inline">{user.email}</span>
+            <LogoutButton />
             <UserButton />
           </div>
         </div>
