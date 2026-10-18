@@ -183,6 +183,13 @@ function SuperAdminWorkspace() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
+            <a
+              href="#create-storefront"
+              className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+            >
+              <Plus size={16} />
+              Create store
+            </a>
             <button
               type="button"
               onClick={() =>
@@ -484,7 +491,7 @@ function CreateStorefrontPanel() {
   };
   const inputClass = "w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100";
   return (
-    <section className="mb-8 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+    <section id="create-storefront" className="mb-8 scroll-mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       <div className="border-b border-slate-200 px-6 py-5">
         <h2 className="flex items-center gap-2 font-semibold"><Plus size={18} /> Create a storefront</h2>
         <p className="mt-1 text-sm text-slate-500">Create the owner’s Firebase account and set up their store in one step.</p>
