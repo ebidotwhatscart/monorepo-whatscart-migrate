@@ -157,6 +157,8 @@ export function useFirebaseMutation<
           )) as OperationReturnType<Mutation>;
         case "superAdmin:setBusinessEnabled":
         case "superAdmin:setBusinessTemplate":
+        case "superAdmin:createStorefront":
+        case "superAdmin:setBusinessOwnerEmail":
         case "adminDeletion:deleteUserAndOwnedDataByEmail":
           return (await postJson(
             "/api/private/super-admin",

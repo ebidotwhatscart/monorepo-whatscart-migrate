@@ -1,4 +1,4 @@
-import { SignInButton } from "../lib/firebase/auth-ui";
+import { EmailSignInForm, SignInButton } from "../lib/firebase/auth-ui";
 import appIcon from "../assets/app_icon.png";
 import { staticAssetUrl } from "../lib/staticAsset";
 
@@ -44,6 +44,12 @@ export default function LandingPage() {
             Already have account? Login
           </button>
         </SignInButton>
+      </div>
+      <div className="mt-8 w-full max-w-sm border-t border-gray-200 pt-6">
+        <p className="mb-3 text-center text-sm font-medium text-gray-600">
+          Sign in with your owner email
+        </p>
+        <EmailSignInForm />
       </div>
     </div>
   );

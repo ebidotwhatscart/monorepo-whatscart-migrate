@@ -17,6 +17,8 @@ import {
   ExternalLink,
   KeyRound,
   Loader2,
+  Mail,
+  Plus,
   Power,
   PowerOff,
   ShieldCheck,
@@ -25,9 +27,10 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { toast } from "sonner";
 import { api, type Id } from "../lib/firebase/operations";
+import { useFirebaseAuth } from "../lib/firebase/auth-context";
 import { STOREFRONT_TEMPLATES } from "../lib/storefrontTemplates";
 import { getErrorMessage } from "../lib/utils";
 
@@ -54,6 +57,8 @@ type BusinessSummary = {
   businessType: string;
   customTemplateId: string | null;
 };
+
+type OwnerEmailTarget = { businessId: string; businessName: string; email: string };
 
 export function SuperAdminPortal() {
   return (
@@ -100,6 +105,7 @@ function SuperAdminWorkspace() {
     user?.role === "super_admin" ? {} : "skip",
   );
   const [deletionTarget, setDeletionTarget] = useState<DeletionTarget | null>(null);
+  const [ownerEmailTarget, setOwnerEmailTarget] = useState<OwnerEmailTarget | null>(null);
 
   useEffect(() => {
     if (user === null) {
@@ -203,6 +209,8 @@ function SuperAdminWorkspace() {
           <Metric icon={<Users size={18} />} label="Orders" value={totalOrders} />
         </div>
 
+        <CreateStorefrontPanel />
+
         <div className="mb-8 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="border-b border-slate-200 px-6 py-5">
             <h2 className="font-semibold">Storefront templates</h2>
@@ -245,6 +253,13 @@ function SuperAdminWorkspace() {
                       businessName: business.name,
                     })
                   }
+                  onChangeOwnerEmail={() =>
+                    setOwnerEmailTarget({
+                      businessId: business._id,
+                      businessName: business.name,
+                      email: business.ownerEmail,
+                    })
+                  }
                 />
               ))}
             </div>
@@ -262,6 +277,12 @@ function SuperAdminWorkspace() {
           onClose={() => setDeletionTarget(null)}
         />
       )}
+      {ownerEmailTarget && (
+        <ChangeOwnerEmailModal
+          target={ownerEmailTarget}
+          onClose={() => setOwnerEmailTarget(null)}
+        />
+      )}
     </div>
   );
 }
@@ -269,9 +290,11 @@ function SuperAdminWorkspace() {
 function BusinessRow({
   business,
   onDeleteOwner,
+  onChangeOwnerEmail,
 }: {
   business: BusinessSummary;
   onDeleteOwner: () => void;
+  onChangeOwnerEmail: () => void;
 }) {
   const setBusinessEnabled = useMutation(api.superAdmin.setBusinessEnabled);
   const setBusinessTemplate = useMutation(api.superAdmin.setBusinessTemplate);
@@ -411,6 +434,15 @@ function BusinessRow({
         </a>
         <button
           type="button"
+          onClick={onChangeOwnerEmail}
+          aria-label={`Change owner email for ${business.name}`}
+          title="Change owner email"
+          className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-slate-500 transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+        >
+          <Mail size={16} />
+        </button>
+        <button
+          type="button"
           onClick={onDeleteOwner}
           aria-label={`Delete all data for ${business.ownerName}`}
           title="Delete owner and all owned stores"
@@ -419,6 +451,89 @@ function BusinessRow({
           <Trash2 size={16} />
         </button>
       </div>
+    </div>
+  );
+}
+
+function CreateStorefrontPanel() {
+  const createStorefront = useMutation(api.superAdmin.createStorefront);
+  const { sendPasswordReset } = useFirebaseAuth();
+  const [isCreating, setIsCreating] = useState(false);
+  const [form, setForm] = useState({
+    name: "", slug: "", email: "", ownerName: "", whatsappPhone: "", businessType: "garments",
+  });
+  const update = (field: keyof typeof form, value: string) =>
+    setForm((current) => ({ ...current, [field]: value }));
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setIsCreating(true);
+    try {
+      await createStorefront(form);
+      setForm({ name: "", slug: "", email: "", ownerName: "", whatsappPhone: "", businessType: "garments" });
+      try {
+        await sendPasswordReset(form.email);
+        toast.success(`Storefront created. A password setup email was sent to ${form.email.trim().toLowerCase()}.`);
+      } catch (emailError) {
+        toast.error(`Storefront created, but the password setup email could not be sent: ${getErrorMessage(emailError)}`);
+      }
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    } finally {
+      setIsCreating(false);
+    }
+  };
+  const inputClass = "w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100";
+  return (
+    <section className="mb-8 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div className="border-b border-slate-200 px-6 py-5">
+        <h2 className="flex items-center gap-2 font-semibold"><Plus size={18} /> Create a storefront</h2>
+        <p className="mt-1 text-sm text-slate-500">Create the owner’s Firebase account and set up their store in one step.</p>
+      </div>
+      <form onSubmit={submit} className="grid gap-4 p-6 sm:grid-cols-2 lg:grid-cols-3">
+        <label className="block"><span className="mb-2 block text-sm font-semibold text-slate-700">Storefront name</span><input required maxLength={200} value={form.name} onChange={(e) => update("name", e.target.value)} className={inputClass} placeholder="Aarav Handicrafts" /></label>
+        <label className="block"><span className="mb-2 block text-sm font-semibold text-slate-700">Store URL / slug</span><input required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" maxLength={63} value={form.slug} onChange={(e) => update("slug", e.target.value.toLowerCase().replace(/\s+/g, "-"))} className={inputClass} placeholder="aarav-handicrafts" /></label>
+        <label className="block"><span className="mb-2 block text-sm font-semibold text-slate-700">Owner email</span><input required type="email" maxLength={320} value={form.email} onChange={(e) => update("email", e.target.value)} className={inputClass} placeholder="owner@example.com" /></label>
+        <label className="block"><span className="mb-2 block text-sm font-semibold text-slate-700">Owner name</span><input required maxLength={200} value={form.ownerName} onChange={(e) => update("ownerName", e.target.value)} className={inputClass} placeholder="Owner name" /></label>
+        <label className="block"><span className="mb-2 block text-sm font-semibold text-slate-700">WhatsApp number</span><input required type="tel" maxLength={20} value={form.whatsappPhone} onChange={(e) => update("whatsappPhone", e.target.value)} className={inputClass} placeholder="9876543210" /></label>
+        <label className="block"><span className="mb-2 block text-sm font-semibold text-slate-700">Business type</span><select value={form.businessType} onChange={(e) => update("businessType", e.target.value)} className={inputClass}><option value="garments">Garments</option><option value="home_bakery">Home Bakery</option><option value="handicrafts">Handicrafts</option><option value="selfcare">Selfcare / Health</option></select></label>
+        <div className="sm:col-span-2 lg:col-span-3"><button type="submit" disabled={isCreating} className="inline-flex items-center gap-2 rounded-xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60">{isCreating ? <Loader2 className="animate-spin" size={16} /> : <Store size={16} />}{isCreating ? "Creating storefront…" : "Create storefront and Firebase user"}</button></div>
+      </form>
+    </section>
+  );
+}
+
+function ChangeOwnerEmailModal({ target, onClose }: { target: OwnerEmailTarget; onClose: () => void }) {
+  const setOwnerEmail = useMutation(api.superAdmin.setBusinessOwnerEmail);
+  const { sendPasswordReset } = useFirebaseAuth();
+  const [email, setEmail] = useState(target.email);
+  const [isSaving, setIsSaving] = useState(false);
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setIsSaving(true);
+    try {
+      await setOwnerEmail({ businessId: target.businessId, email });
+      try {
+        await sendPasswordReset(email);
+        toast.success(`Owner email updated and a password setup email was sent to ${email.trim().toLowerCase()}.`);
+      } catch (emailError) {
+        toast.error(`Owner email updated, but a password setup email could not be sent: ${getErrorMessage(emailError)}`);
+      }
+      onClose();
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    } finally {
+      setIsSaving(false);
+    }
+  };
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/50 px-4 backdrop-blur-[2px]">
+      <section role="dialog" aria-modal="true" aria-labelledby="owner-email-title" className="w-full max-w-lg overflow-hidden rounded-3xl bg-white shadow-2xl">
+        <div className="border-b border-slate-200 px-6 py-5"><h2 id="owner-email-title" className="font-semibold">Change storefront owner email</h2><p className="mt-1 text-sm text-slate-500">The Firebase Auth account and owner profile will be updated together.</p></div>
+        <form onSubmit={submit} className="space-y-5 p-6">
+          <label className="block"><span className="mb-2 block text-sm font-semibold text-slate-700">New email for {target.businessName}</span><input autoFocus required type="email" maxLength={320} value={email} onChange={(event) => setEmail(event.target.value)} className="w-full rounded-xl border border-slate-300 px-3.5 py-3 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100" /></label>
+          <div className="flex justify-end gap-3"><button type="button" onClick={onClose} disabled={isSaving} className="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700">Cancel</button><button type="submit" disabled={isSaving || email.trim().toLowerCase() === target.email.trim().toLowerCase()} className="inline-flex items-center gap-2 rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50">{isSaving && <Loader2 className="animate-spin" size={16} />}{isSaving ? "Updating…" : "Update owner email"}</button></div>
+        </form>
+      </section>
     </div>
   );
 }

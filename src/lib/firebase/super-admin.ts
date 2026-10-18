@@ -8,8 +8,149 @@ import type { Storage } from "firebase-admin/storage";
 
 import { STOREFRONT_TEMPLATE_IDS } from "../storefrontTemplates";
 import { userUploadPrefix } from "./upload-token";
+import { normalizeIndianWhatsappPhone } from "../phone";
 
 type UnknownRecord = Record<string, unknown>;
+
+const BUSINESS_TYPES = new Set(["garments", "home_bakery", "handicrafts", "selfcare"]);
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function normalizedEmail(value: unknown) {
+  const email = requiredString(value, "email", 320).toLowerCase();
+  if (!EMAIL_PATTERN.test(email)) throw new Error("Enter a valid owner email address.");
+  return email;
+}
+
+export async function createStorefrontBySuperAdmin(
+  firestore: Firestore,
+  auth: Auth,
+  rawBody: unknown,
+) {
+  if (!rawBody || typeof rawBody !== "object") throw new Error("Storefront details are invalid.");
+  const body = rawBody as UnknownRecord;
+  const name = requiredString(body.name, "name", 200);
+  const slug = requiredString(body.slug, "slug", 63).toLowerCase();
+  if (!/^[a-z0-9](?:[a-z0-9-]{1,61}[a-z0-9])?$/.test(slug)) throw new Error("Store URL must use lowercase letters, numbers, and hyphens.");
+  const email = normalizedEmail(body.email);
+  const ownerName = requiredString(body.ownerName, "ownerName", 200);
+  const businessType = requiredString(body.businessType, "businessType", 40);
+  if (!BUSINESS_TYPES.has(businessType)) throw new Error("Business type is invalid.");
+  const whatsappPhone = normalizeIndianWhatsappPhone(requiredString(body.whatsappPhone, "whatsappPhone", 20));
+  if (!whatsappPhone) throw new Error("Enter a valid 10-digit WhatsApp number.");
+  const now = Date.now();
+  let owner: UserRecord | undefined;
+  let createdAuthUser = false;
+  try {
+    owner = await auth.getUserByEmail(email);
+  } catch (error) {
+    if ((error as { code?: string })?.code !== "auth/user-not-found") throw error;
+  }
+  if (owner) throw new Error("A Firebase user already uses this email address.");
+  owner = await auth.createUser({ email, displayName: ownerName, emailVerified: false, disabled: false });
+  createdAuthUser = true;
+  const businessRef = firestore.collection("businesses").doc();
+  const userRef = firestore.collection("users").doc(owner.uid);
+  try {
+    await firestore.runTransaction(async (transaction) => {
+      const [slugMatches, userSnapshot] = await Promise.all([
+        transaction.get(firestore.collection("businesses").where("slug", "==", slug).limit(1)),
+        transaction.get(userRef),
+      ]);
+      if (!slugMatches.empty) throw new Error("Store URL is already in use.");
+      if (userSnapshot.exists) throw new Error("A user profile already exists for this email address.");
+      transaction.create(userRef, {
+        _creationTime: now, createdAt: now, email, firebaseUid: owner!.uid,
+        name: ownerName, role: "user", updatedAt: now,
+      });
+      transaction.create(businessRef, {
+        _creationTime: now, createdAt: now, businessType, customTemplateId: null,
+        isEnabled: true, name, orderSequence: 0, ownerId: owner!.uid,
+        ownerName, slug, themeColor: "#3DAC35", whatsappPhone,
+      });
+    });
+  } catch (error) {
+    if (createdAuthUser) await auth.deleteUser(owner.uid).catch(() => undefined);
+    throw error;
+  }
+  return businessRef.id;
+}
+
+export async function setBusinessOwnerEmailBySuperAdmin(
+  firestore: Firestore,
+  auth: Auth,
+  rawBody: unknown,
+) {
+  if (!rawBody || typeof rawBody !== "object") throw new Error("Owner update is invalid.");
+  const body = rawBody as UnknownRecord;
+  const businessId = requiredString(body.businessId, "businessId", 300);
+  const email = normalizedEmail(body.email);
+  const businessRef = firestore.collection("businesses").doc(businessId);
+  const business = await businessRef.get();
+  if (!business.exists) throw new Error("Business not found.");
+  const ownerId = requiredString(business.data()?.ownerId, "ownerId", 300);
+  const userRef = firestore.collection("users").doc(ownerId);
+  let replacementOwner: UserRecord | undefined;
+  const user = await userRef.get();
+  const currentEmail = String(user.data()?.email ?? "").trim().toLowerCase();
+  if (email === currentEmail) return { businessId, email };
+  let owner: UserRecord | undefined;
+  try {
+    owner = await auth.getUser(ownerId);
+  } catch (error) {
+    if ((error as { code?: string })?.code !== "auth/user-not-found") throw error;
+  }
+  if (owner) {
+    const previousEmail = currentEmail || owner.email || "";
+    await auth.updateUser(owner.uid, { email, emailVerified: false });
+    try {
+      await firestore.runTransaction(async (transaction) => {
+        const [latestBusiness, latestUser, emailMatches] = await Promise.all([
+          transaction.get(businessRef), transaction.get(userRef),
+          transaction.get(firestore.collection("users").where("email", "==", email).limit(2)),
+        ]);
+        if (!latestBusiness.exists || latestBusiness.data()?.ownerId !== ownerId) throw new Error("Store owner changed; refresh and try again.");
+        if (emailMatches.docs.some((entry) => entry.id !== ownerId)) throw new Error("Another user profile already uses this email address.");
+        transaction.set(userRef, { ...(latestUser.data() ?? {}), email, firebaseUid: ownerId, updatedAt: Date.now() });
+      });
+    } catch (error) {
+      if (previousEmail) await auth.updateUser(owner.uid, { email: previousEmail }).catch(() => undefined);
+      throw error;
+    }
+    return { businessId, email };
+  } else {
+    let existing: UserRecord | undefined;
+    try { existing = await auth.getUserByEmail(email); } catch (error) {
+      if ((error as { code?: string })?.code !== "auth/user-not-found") throw error;
+    }
+    if (existing) throw new Error("A different Firebase user already uses this email address.");
+    replacementOwner = await auth.createUser({ email, displayName: business.data()?.ownerName, emailVerified: false });
+  }
+  try {
+    await firestore.runTransaction(async (transaction) => {
+      const [latestBusiness, latestUser, emailMatches, ownedBusinesses] = await Promise.all([
+        transaction.get(businessRef), transaction.get(userRef),
+        transaction.get(firestore.collection("users").where("email", "==", email).limit(2)),
+        transaction.get(firestore.collection("businesses").where("ownerId", "==", ownerId)),
+      ]);
+      if (!latestBusiness.exists || latestBusiness.data()?.ownerId !== ownerId) throw new Error("Store owner changed; refresh and try again.");
+      if (emailMatches.docs.some((entry) => entry.id !== ownerId)) throw new Error("Another user profile already uses this email address.");
+      const ownerData = { ...(latestUser.data() ?? {}), email, firebaseUid: replacementOwner?.uid ?? ownerId, updatedAt: Date.now() };
+      if (replacementOwner) {
+        transaction.set(firestore.collection("users").doc(replacementOwner.uid), { ...ownerData, _creationTime: latestUser.data()?._creationTime ?? Date.now(), createdAt: latestUser.data()?.createdAt ?? Date.now() });
+        if (latestUser.exists) transaction.delete(userRef);
+        ownedBusinesses.docs.forEach((ownedBusiness) =>
+          transaction.update(ownedBusiness.ref, { ownerId: replacementOwner!.uid }),
+        );
+      } else {
+        transaction.set(userRef, ownerData);
+      }
+    });
+  } catch (error) {
+    if (replacementOwner) await auth.deleteUser(replacementOwner.uid).catch(() => undefined);
+    throw error;
+  }
+  return { businessId, email };
+}
 
 function requiredString(value: unknown, field: string, maxLength: number) {
   if (

@@ -6,7 +6,9 @@ import {
   getAdminStorage,
 } from "@/lib/firebase/admin";
 import {
+  createStorefrontBySuperAdmin,
   deleteUserAndOwnedDataBySuperAdmin,
+  setBusinessOwnerEmailBySuperAdmin,
   setBusinessEnabledBySuperAdmin,
   setBusinessTemplateBySuperAdmin,
 } from "@/lib/firebase/super-admin";
@@ -47,6 +49,10 @@ export async function POST(request: NextRequest) {
       result = await setBusinessEnabledBySuperAdmin(firestore, body.args);
     } else if (body.operation === "superAdmin:setBusinessTemplate") {
       result = await setBusinessTemplateBySuperAdmin(firestore, body.args);
+    } else if (body.operation === "superAdmin:createStorefront") {
+      result = await createStorefrontBySuperAdmin(firestore, auth, body.args);
+    } else if (body.operation === "superAdmin:setBusinessOwnerEmail") {
+      result = await setBusinessOwnerEmailBySuperAdmin(firestore, auth, body.args);
     } else if (
       body.operation === "adminDeletion:deleteUserAndOwnedDataByEmail"
     ) {

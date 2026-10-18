@@ -5,6 +5,7 @@ import {
   onIdTokenChanged,
   signInWithEmailAndPassword,
   signInWithPopup,
+  sendPasswordResetEmail,
   signOut as firebaseSignOut,
   type User,
 } from "firebase/auth";
@@ -26,6 +27,7 @@ type FirebaseAuthContextValue = {
   user: User | null;
   signIn: () => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<void>;
+  sendPasswordReset: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -101,6 +103,12 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
     await signInWithEmailAndPassword(client.auth, email.trim(), password);
   }, []);
 
+  const sendPasswordReset = useCallback(async (email: string) => {
+    const client = getFirebaseClient();
+    if (!client) throw new Error("Firebase client configuration is missing.");
+    await sendPasswordResetEmail(client.auth, email.trim());
+  }, []);
+
   const signOut = useCallback(async () => {
     const client = getFirebaseClient();
     if (!client) return;
@@ -125,9 +133,10 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
       user,
       signIn,
       signInWithEmail,
+      sendPasswordReset,
       signOut,
     }),
-    [isLoaded, signIn, signInWithEmail, signOut, user],
+    [isLoaded, signIn, signInWithEmail, sendPasswordReset, signOut, user],
   );
 
   return (

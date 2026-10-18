@@ -79,11 +79,12 @@ function emailSignInError(error: unknown) {
 }
 
 export function EmailSignInForm() {
-  const { signInWithEmail } = useFirebaseAuth();
+  const { signInWithEmail, sendPasswordReset } = useFirebaseAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSigningIn, setIsSigningIn] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -95,6 +96,21 @@ export function EmailSignInForm() {
       setError(emailSignInError(signInError));
     } finally {
       setIsSigningIn(false);
+    }
+  };
+
+  const requestPasswordReset = async () => {
+    setError(null);
+    setResetSent(false);
+    if (!email.trim()) {
+      setError("Enter your email address first.");
+      return;
+    }
+    try {
+      await sendPasswordReset(email);
+      setResetSent(true);
+    } catch (resetError) {
+      setError(emailSignInError(resetError));
     }
   };
 
@@ -131,12 +147,22 @@ export function EmailSignInForm() {
       {error ? (
         <p role="alert" className="text-sm text-rose-600">{error}</p>
       ) : null}
+      {resetSent ? (
+        <p role="status" className="text-sm text-emerald-700">Password reset email sent. Follow its link to set your password.</p>
+      ) : null}
       <button
         type="submit"
         disabled={isSigningIn}
         className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 font-medium text-slate-950 transition hover:bg-slate-50 disabled:cursor-wait disabled:opacity-60"
       >
         {isSigningIn ? "Signing in…" : "Sign in with email"}
+      </button>
+      <button
+        type="button"
+        onClick={() => void requestPasswordReset()}
+        className="w-full text-center text-sm font-medium text-slate-600 underline-offset-4 hover:text-slate-950 hover:underline"
+      >
+        Set or reset password
       </button>
     </form>
   );

@@ -179,8 +179,10 @@ type OperationApi = {
     submitReviews: Mutation;
   };
   superAdmin: {
+    createStorefront: Mutation<string>;
     getBusinessForAdmin: Query<LooseDocument | null>;
     listBusinesses: Query<LooseDocument[]>;
+    setBusinessOwnerEmail: Mutation;
     setBusinessEnabled: Mutation;
     setBusinessTemplate: Mutation;
   };
