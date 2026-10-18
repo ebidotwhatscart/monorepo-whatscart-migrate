@@ -134,6 +134,8 @@ describe("SuperAdminPortal", () => {
       target: { value: "nilav" },
     });
 
+    expect(screen.getByLabelText("Storefront template")).toHaveValue("nilav");
+
     await waitFor(() =>
       expect(mockSetBusinessTemplate).toHaveBeenCalledWith({
         businessId: "business_123",

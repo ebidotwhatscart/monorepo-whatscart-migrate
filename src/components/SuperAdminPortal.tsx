@@ -274,10 +274,17 @@ function BusinessRow({
   const setBusinessTemplate = useMutation(api.superAdmin.setBusinessTemplate);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isUpdatingTemplate, setIsUpdatingTemplate] = useState(false);
+  const [selectedTemplateId, setSelectedTemplateId] = useState(
+    business.customTemplateId ?? "",
+  );
   const href = `/dashboard?businessId=${encodeURIComponent(business._id)}`;
   const knownTemplate = STOREFRONT_TEMPLATES.some(
     (template) => template.id === business.customTemplateId,
   );
+
+  useEffect(() => {
+    setSelectedTemplateId(business.customTemplateId ?? "");
+  }, [business.customTemplateId]);
 
   const handleStatusChange = async () => {
     const nextEnabled = !business.isEnabled;
@@ -293,6 +300,8 @@ function BusinessRow({
   };
 
   const handleTemplateChange = async (value: string) => {
+    const previousValue = selectedTemplateId;
+    setSelectedTemplateId(value);
     setIsUpdatingTemplate(true);
     try {
       const next = value === "" ? null : value;
@@ -306,6 +315,7 @@ function BusinessRow({
           : `${business.name} now uses the standard storefront`,
       );
     } catch (error) {
+      setSelectedTemplateId(previousValue);
       toast.error(getErrorMessage(error));
     } finally {
       setIsUpdatingTemplate(false);
@@ -353,7 +363,7 @@ function BusinessRow({
           <span className="sr-only">Storefront template</span>
           <select
             aria-label="Storefront template"
-            value={business.customTemplateId ?? ""}
+            value={selectedTemplateId}
             disabled={isUpdatingTemplate}
             onChange={(event) => handleTemplateChange(event.target.value)}
             className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-950"
@@ -366,7 +376,7 @@ function BusinessRow({
             ))}
             {business.customTemplateId && !knownTemplate && (
               <option value={business.customTemplateId} disabled>
-                Unknown ({business.customTemplateId})
+                Unknown (id: {business.customTemplateId})
               </option>
             )}
           </select>
