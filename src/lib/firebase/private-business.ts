@@ -7,7 +7,7 @@ import { userUploadPrefix } from "./upload-token";
 
 type UnknownRecord = Record<string, unknown>;
 
-const BUSINESS_TYPES = new Set(["garments", "home_bakery", "handicrafts"]);
+const BUSINESS_TYPES = new Set(["garments", "home_bakery", "handicrafts", "selfcare"]);
 const SLUG_PATTERN = /^[a-z0-9](?:[a-z0-9-]{1,61}[a-z0-9])?$/;
 
 function requiredString(value: unknown, field: string, maxLength: number) {

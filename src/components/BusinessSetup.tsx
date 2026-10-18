@@ -34,6 +34,7 @@ import {
   Cpu,
   ExternalLink,
   Footprints,
+  Heart,
   ImagePlus,
   PaintbrushVertical,
   ShoppingBasket,
@@ -51,6 +52,7 @@ const BUSINESS_TYPES = [
   { value: "garments", label: "Garments", icon: Shirt },
   { value: "home_bakery", label: "Home Bakery", icon: Sparkles },
   { value: "handicrafts", label: "Handicrafts", icon: PaintbrushVertical },
+  { value: "selfcare", label: "Selfcare / Health", icon: Heart },
 ] as const;
 
 const LANGUAGES = [
@@ -125,7 +127,7 @@ export function BusinessSetup({ onCreated, onFinish }: BusinessSetupProps) {
   const [ownerName, setOwnerName] = useState("");
   const [language, setLanguage] = useState("English");
   const [businessType, setBusinessType] = useState<
-    "garments" | "home_bakery" | "handicrafts" | ""
+    "garments" | "home_bakery" | "handicrafts" | "selfcare" | ""
   >("");
   const [businessName, setBusinessName] = useState("");
   const [slug, setSlug] = useState("");

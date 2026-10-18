@@ -118,4 +118,32 @@ export const BUSINESS_TYPE_CONFIG: Record<BusinessType, ProductTypeConfig> = {
         "Confirm handmade finishes, personalization, and dispatch timelines directly on WhatsApp.",
     },
   },
+  selfcare: {
+    categorySuggestions: ["Home Decor", "Jewelry", "Gift Items"],
+    variationOptions: [
+      { variantType: "Material", values: ["Wood", "Clay", "Metal", "Resin"] },
+      { variantType: "Color", values: ["Natural", "Black", "White", "Blue"] },
+      { variantType: "Style", values: ["Minimal", "Rustic", "Traditional"] },
+      { variantType: "Finish", values: ["Matte", "Glossy", "Polished"] },
+      { variantType: "Design", values: ["Floral", "Geometric", "Abstract"] },
+    ],
+    audienceOptions: [
+      { value: "female", label: "Female" },
+      { value: "male", label: "Male" },
+      { value: "unisex", label: "Unisex" },
+      { value: "kid", label: "Kid" },
+    ],
+    customizationLabel: "Allow Selfcare Personalization",
+    customizationOptions: [
+      { value: "custom_engraving", label: "Custom engraving (names, dates, quotes)" },
+      { value: "embroidered_text", label: "Embroidered text/designs" },
+      { value: "customer_photo_upload", label: "Customer photo upload (printed/etched)" },
+    ],
+    storefront: {
+      shippingBanner: "Selfcare essentials shipped with care",
+      directConnectionTitle: "Direct Maker Connection",
+      directConnectionBody:
+        "Confirm personalization and dispatch timelines directly on WhatsApp.",
+    },
+  },
 };

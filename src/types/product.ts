@@ -1,6 +1,6 @@
-export const BUSINESS_TYPES = ["garments", "home_bakery", "handicrafts"] as const;
+export const BUSINESS_TYPES = ["garments", "home_bakery", "handicrafts", "selfcare"] as const;
 export type BusinessType = (typeof BUSINESS_TYPES)[number];
-export const LEGACY_BUSINESS_TYPES = ["food", "clothing", "accessories"] as const;
+export const LEGACY_BUSINESS_TYPES = ["food", "clothing", "accessories", "health"] as const;
 export type LegacyBusinessType = (typeof LEGACY_BUSINESS_TYPES)[number];
 export type StoredBusinessType = BusinessType | LegacyBusinessType;
 
@@ -17,7 +17,19 @@ export function normalizeBusinessType(value: StoredBusinessType): BusinessType {
     return "garments";
   }
 
+  if (value === "health") {
+    return "selfcare";
+  }
+
   return value;
+}
+
+export function isHandicraftFamily(
+  value: StoredBusinessType | null | undefined,
+): boolean {
+  if (!value) return false;
+  const type = normalizeBusinessType(value);
+  return type === "handicrafts" || type === "selfcare";
 }
 
 export const PRODUCT_AUDIENCES = ["female", "male", "unisex", "kid"] as const;
