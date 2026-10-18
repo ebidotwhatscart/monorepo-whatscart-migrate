@@ -48,7 +48,7 @@ export function NilavTemplate({ fallback }: { fallback: ReactNode }) {
   const visibleProducts = useMemo(() => products?.filter((item) => item.inStock !== false) ?? [], [products]);
   useEffect(() => { setSelectedSize(product?.sizes?.[0]?.size ?? ""); }, [product?._id]);
 
-  useEffect(() => { if (business?._id && business.customTemplateId === "nilav") updateBusinessId(business._id); }, [business?._id, business?.customTemplateId, updateBusinessId]);
+  useEffect(() => { if (business?._id) updateBusinessId(business._id); }, [business?._id, updateBusinessId]);
   useEffect(() => {
     if (!business?._id || appliedCoupon) return;
     const code = getAutoAppliedCoupon(business._id);
@@ -57,7 +57,7 @@ export function NilavTemplate({ fallback }: { fallback: ReactNode }) {
       setCouponInput(code);
     }
   }, [business?._id, appliedCoupon, getTotalPrice]);
-  if (!business || business.customTemplateId !== "nilav") return <>{fallback}</>;
+  if (!business) return <>{fallback}</>;
 
   const href = (path = "") => storefrontPath(business.slug, path);
   const addProduct = (item: PublicProduct, size?: string) => {
