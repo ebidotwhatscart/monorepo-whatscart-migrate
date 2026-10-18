@@ -27,6 +27,7 @@ import {
 import { useEffect, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { api, type Id } from "../lib/firebase/operations";
+import { STOREFRONT_TEMPLATES } from "../lib/storefrontTemplates";
 import { getErrorMessage } from "../lib/utils";
 
 const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://whatscart.in";
@@ -49,6 +50,8 @@ type BusinessSummary = {
   productCount: number;
   orderCount: number;
   isEnabled: boolean;
+  businessType: string;
+  customTemplateId: string | null;
 };
 
 export function SuperAdminPortal() {
@@ -197,6 +200,28 @@ function SuperAdminWorkspace() {
           <Metric icon={<Users size={18} />} label="Orders" value={totalOrders} />
         </div>
 
+        <div className="mb-8 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="border-b border-slate-200 px-6 py-5">
+            <h2 className="font-semibold">Storefront templates</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Assign a skin to any business below. Owners cannot change this.
+            </p>
+          </div>
+          <div className="divide-y divide-slate-100">
+            {STOREFRONT_TEMPLATES.map((template) => (
+              <div key={template.id} className="flex items-center gap-3 px-6 py-4">
+                <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700 ring-1 ring-inset ring-indigo-200">
+                  {template.businessType}
+                </span>
+                <div>
+                  <p className="font-semibold">{template.name}</p>
+                  <p className="text-sm text-slate-500">{template.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="border-b border-slate-200 px-6 py-5">
             <h2 className="font-semibold">Onboarded businesses</h2>
@@ -246,8 +271,13 @@ function BusinessRow({
   onDeleteOwner: () => void;
 }) {
   const setBusinessEnabled = useMutation(api.superAdmin.setBusinessEnabled);
+  const setBusinessTemplate = useMutation(api.superAdmin.setBusinessTemplate);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isUpdatingTemplate, setIsUpdatingTemplate] = useState(false);
   const href = `/dashboard?businessId=${encodeURIComponent(business._id)}`;
+  const knownTemplate = STOREFRONT_TEMPLATES.some(
+    (template) => template.id === business.customTemplateId,
+  );
 
   const handleStatusChange = async () => {
     const nextEnabled = !business.isEnabled;
@@ -259,6 +289,26 @@ function BusinessRow({
       toast.error(getErrorMessage(error));
     } finally {
       setIsUpdating(false);
+    }
+  };
+
+  const handleTemplateChange = async (value: string) => {
+    setIsUpdatingTemplate(true);
+    try {
+      const next = value === "" ? null : value;
+      await setBusinessTemplate({
+        businessId: business._id,
+        customTemplateId: next,
+      });
+      toast.success(
+        next
+          ? `${business.name} now uses the ${next} template`
+          : `${business.name} now uses the standard storefront`,
+      );
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    } finally {
+      setIsUpdatingTemplate(false);
     }
   };
 
@@ -299,6 +349,28 @@ function BusinessRow({
       </div>
 
       <div className="flex flex-wrap items-center gap-2 sm:pl-15 xl:pl-0">
+        <label className="flex items-center gap-2 text-sm text-slate-600">
+          <span className="sr-only">Storefront template</span>
+          <select
+            aria-label="Storefront template"
+            value={business.customTemplateId ?? ""}
+            disabled={isUpdatingTemplate}
+            onChange={(event) => handleTemplateChange(event.target.value)}
+            className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-950"
+          >
+            <option value="">Standard</option>
+            {STOREFRONT_TEMPLATES.map((template) => (
+              <option key={template.id} value={template.id}>
+                {template.name}
+              </option>
+            ))}
+            {business.customTemplateId && !knownTemplate && (
+              <option value={business.customTemplateId} disabled>
+                Unknown ({business.customTemplateId})
+              </option>
+            )}
+          </select>
+        </label>
         <button
           type="button"
           onClick={handleStatusChange}

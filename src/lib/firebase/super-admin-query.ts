@@ -10,6 +10,10 @@ import {
 } from "firebase/firestore";
 
 import { businessValue } from "./documents";
+import {
+  normalizeBusinessType,
+  type StoredBusinessType,
+} from "../../types/product";
 
 type QueryArgs = Record<string, unknown>;
 type Emit = (value: unknown) => void;
@@ -71,6 +75,16 @@ function observeBusinessList(
             ownerName: business.ownerName ?? owner?.name ?? "Unknown owner",
             productCount: productCounts.get(String(business._id)) ?? 0,
             slug: business.slug,
+            businessType:
+              typeof business.businessType === "string"
+                ? normalizeBusinessType(
+                    business.businessType as StoredBusinessType,
+                  )
+                : "",
+            customTemplateId:
+              typeof business.customTemplateId === "string"
+                ? business.customTemplateId
+                : null,
           };
         })
         .sort((left, right) =>

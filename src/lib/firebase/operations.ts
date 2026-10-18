@@ -38,6 +38,7 @@ export type LooseDocument = {
   colorName: any;
   colorSwatch: any;
   createdAt: any;
+  customTemplateId: any;
   customerAddress: any;
   customerDoorNumber: any;
   date: any;

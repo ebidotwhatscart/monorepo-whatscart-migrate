@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { SuperAdminPortal } from "../SuperAdminPortal";
 
 const mockSetBusinessEnabled = vi.fn();
+const mockSetBusinessTemplate = vi.fn();
 const mockDeleteUserData = vi.fn();
 
 const businesses = [
@@ -18,6 +19,8 @@ const businesses = [
     orderCount: 4,
     createdAt: 1,
     isEnabled: true,
+    businessType: "garments",
+    customTemplateId: null,
   },
 ];
 
@@ -36,7 +39,11 @@ vi.mock("../../lib/firebase/hooks", () => ({
   ),
 }));
 vi.mock("../../lib/firebase/mutations", () => ({
-  useFirebaseMutation: vi.fn(() => mockSetBusinessEnabled),
+  useFirebaseMutation: vi.fn((operation: { __operationName?: string }) =>
+    operation?.__operationName === "superAdmin:setBusinessTemplate"
+      ? mockSetBusinessTemplate
+      : mockSetBusinessEnabled,
+  ),
   useFirebaseAction: vi.fn(() => mockDeleteUserData),
 }));
 
@@ -52,6 +59,10 @@ describe("SuperAdminPortal", () => {
     mockSetBusinessEnabled.mockReset().mockResolvedValue({
       businessId: "business_123",
       isEnabled: false,
+    });
+    mockSetBusinessTemplate.mockReset().mockResolvedValue({
+      businessId: "business_123",
+      customTemplateId: null,
     });
     mockDeleteUserData.mockReset().mockResolvedValue({
       identifier: "user_123",
@@ -108,6 +119,25 @@ describe("SuperAdminPortal", () => {
       expect(mockDeleteUserData).toHaveBeenCalledWith({
         id: "user_123",
         confirmId: "user_123",
+      }),
+    );
+  });
+
+  it("assigns a storefront template from the business row", async () => {
+    mockSetBusinessTemplate.mockResolvedValue({
+      businessId: "business_123",
+      customTemplateId: "nilav",
+    });
+    render(<SuperAdminPortal />);
+
+    fireEvent.change(screen.getByLabelText("Storefront template"), {
+      target: { value: "nilav" },
+    });
+
+    await waitFor(() =>
+      expect(mockSetBusinessTemplate).toHaveBeenCalledWith({
+        businessId: "business_123",
+        customTemplateId: "nilav",
       }),
     );
   });
