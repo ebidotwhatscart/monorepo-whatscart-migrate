@@ -997,6 +997,44 @@ describeWithEmulator("Firebase private orders", () => {
     );
     expect(enabled.status).toBe(200);
 
+    const setTemplate = await operation(
+      superAdmin,
+      "superAdmin:setBusinessTemplate",
+      { businessId: "private-orders-business", customTemplateId: "nilav" },
+    );
+    expect(setTemplate.status).toBe(200);
+    expect(
+      (
+        await firestore
+          .collection("businesses")
+          .doc("private-orders-business")
+          .get()
+      ).data()?.customTemplateId,
+    ).toBe("nilav");
+
+    const clearTemplate = await operation(
+      superAdmin,
+      "superAdmin:setBusinessTemplate",
+      { businessId: "private-orders-business", customTemplateId: null },
+    );
+    expect(clearTemplate.status).toBe(200);
+
+    const unknownTemplate = await operation(
+      superAdmin,
+      "superAdmin:setBusinessTemplate",
+      {
+        businessId: "private-orders-business",
+        customTemplateId: "not-a-template",
+      },
+    );
+    expect(unknownTemplate.status).toBe(400);
+
+    const forbidden = await operation(owner, "superAdmin:setBusinessTemplate", {
+      businessId: "private-orders-business",
+      customTemplateId: "nilav",
+    });
+    expect(forbidden.status).toBe(403);
+
     const suffix = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
     const disposable = await createIdentity(
       `disposable-owner-${suffix}@example.test`,

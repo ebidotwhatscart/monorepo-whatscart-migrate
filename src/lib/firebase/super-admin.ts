@@ -6,6 +6,7 @@ import type {
 } from "firebase-admin/firestore";
 import type { Storage } from "firebase-admin/storage";
 
+import { STOREFRONT_TEMPLATE_IDS } from "../storefrontTemplates";
 import { userUploadPrefix } from "./upload-token";
 
 type UnknownRecord = Record<string, unknown>;
@@ -37,6 +38,30 @@ export async function setBusinessEnabledBySuperAdmin(
   if (!business.exists) throw new Error("Business not found.");
   await business.ref.update({ isEnabled: body.isEnabled });
   return { businessId, isEnabled: body.isEnabled };
+}
+
+export async function setBusinessTemplateBySuperAdmin(
+  firestore: Firestore,
+  rawBody: unknown,
+) {
+  if (!rawBody || typeof rawBody !== "object") {
+    throw new Error("Business update is invalid.");
+  }
+  const body = rawBody as UnknownRecord;
+  const businessId = requiredString(body.businessId, "businessId", 300);
+  const raw = body.customTemplateId;
+  let customTemplateId: string | null;
+  if (raw === undefined || raw === null || raw === "") {
+    customTemplateId = null;
+  } else if (typeof raw === "string" && STOREFRONT_TEMPLATE_IDS.has(raw)) {
+    customTemplateId = raw;
+  } else {
+    throw new Error("customTemplateId is invalid.");
+  }
+  const business = await firestore.collection("businesses").doc(businessId).get();
+  if (!business.exists) throw new Error("Business not found.");
+  await business.ref.update({ customTemplateId });
+  return { businessId, customTemplateId };
 }
 
 type DeletionCounts = Record<

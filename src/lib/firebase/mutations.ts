@@ -156,6 +156,7 @@ export function useFirebaseMutation<
             await firebaseAuthorizationHeader(),
           )) as OperationReturnType<Mutation>;
         case "superAdmin:setBusinessEnabled":
+        case "superAdmin:setBusinessTemplate":
         case "adminDeletion:deleteUserAndOwnedDataByEmail":
           return (await postJson(
             "/api/private/super-admin",

@@ -8,6 +8,7 @@ import {
 import {
   deleteUserAndOwnedDataBySuperAdmin,
   setBusinessEnabledBySuperAdmin,
+  setBusinessTemplateBySuperAdmin,
 } from "@/lib/firebase/super-admin";
 import {
   FirebaseRequestAuthError,
@@ -44,6 +45,8 @@ export async function POST(request: NextRequest) {
     let result: unknown;
     if (body.operation === "superAdmin:setBusinessEnabled") {
       result = await setBusinessEnabledBySuperAdmin(firestore, body.args);
+    } else if (body.operation === "superAdmin:setBusinessTemplate") {
+      result = await setBusinessTemplateBySuperAdmin(firestore, body.args);
     } else if (
       body.operation === "adminDeletion:deleteUserAndOwnedDataByEmail"
     ) {

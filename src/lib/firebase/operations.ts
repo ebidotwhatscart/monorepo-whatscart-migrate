@@ -181,6 +181,7 @@ type OperationApi = {
     getBusinessForAdmin: Query<LooseDocument | null>;
     listBusinesses: Query<LooseDocument[]>;
     setBusinessEnabled: Mutation;
+    setBusinessTemplate: Mutation;
   };
 };
 
